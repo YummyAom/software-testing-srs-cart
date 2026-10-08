@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { ShoppingBag } from "lucide-react"
 import { AppShell } from "@/components/commerce/shell"
-import { PageScaffold } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
 import { ApiError } from "@/src/lib/api-client"
 
@@ -61,73 +61,83 @@ export default function LoginPage() {
     }
   }
 
-  const messageProps = error
-    ? {
-        message: error.message,
-        messageKind: "error" as const,
-        messageCode: error.code,
-      }
-    : {}
-
   return (
-    <AppShell>
-      <PageScaffold
-        pageTestId="page-login"
-        title="เข้าสู่ระบบ"
-        description="กรอกข้อมูลบัญชีเพื่อเข้าสู่ระบบสั่งซื้อ"
-        className="login-page"
-        {...messageProps}
-      >
-        <section className="surface-panel login-panel" aria-labelledby="login-form-heading">
-          <div className="panel-body">
-            <h2 id="login-form-heading" className="login-panel-heading">
-              ข้อมูลบัญชี
-            </h2>
-            <form onSubmit={handleLogin}>
-              <fieldset className="form-stack login-fields" disabled={isLoading}>
-                <legend className="sr-only">ข้อมูลสำหรับเข้าสู่ระบบ</legend>
-                <div className="field-block">
-                  <label htmlFor="login-username">อีเมล</label>
-                  <input
-                    id="login-username"
-                    data-testid="login-username"
-                    className="form-control"
-                    type="text"
-                    autoComplete="username"
-                    placeholder="อีเมล"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                </div>
-                <div className="field-block">
-                  <label htmlFor="login-password">รหัสผ่าน</label>
-                  <input
-                    id="login-password"
-                    data-testid="login-password"
-                    className="form-control"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="รหัสผ่าน"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="button button-primary button-full"
-                  data-testid="login-submit"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-                </button>
-              </fieldset>
-            </form>
-            <p className="form-footnote">
-              * โหมดทดสอบ: customer1@example.com หรือ admin1@example.com รหัสผ่าน cart-test-only-password
-            </p>
+    <AppShell role="guest" hideHeader hideFooter>
+      <div className="login-screen-wrapper" data-testid="page-login">
+        <div className="login-card-container">
+          {/* ไอคอนบนสุด ขยายใหญ่ขึ้นในกรอบสีเดิม */}
+          <div className="login-brand-icon-box" aria-hidden="true">
+            <ShoppingBag size={28} strokeWidth={2} />
           </div>
-        </section>
-      </PageScaffold>
+
+          {/* คำว่า Login ตัวหนา ขนาดใหญ่พอดี */}
+          <h1 className="login-card-title">Login</h1>
+          <p className="login-card-subtitle">ยินดีต้อนรับกลับมา</p>
+
+          {/* กล่องข้อความแจ้งเตือนข้อผิดพลาด (ถ้ามี) */}
+          {error && (
+            <div
+              className="login-error-alert"
+              data-testid="app-message"
+              data-kind="error"
+              data-code={error.code}
+              role="alert"
+              aria-live="assertive"
+            >
+              <span className="login-error-mark" aria-hidden="true">
+                !
+              </span>
+              <p>{error.message}</p>
+            </div>
+          )}
+
+          {/* ฟอร์มเข้าสู่ระบบ */}
+          <form className="login-card-form" onSubmit={handleLogin}>
+            <div className="login-input-group">
+              <label htmlFor="login-username" className="login-field-label">
+                อีเมล
+              </label>
+              <input
+                id="login-username"
+                data-testid="login-username"
+                className="login-text-input"
+                type="text"
+                autoComplete="username"
+                placeholder="อีเมล"
+                value={username}
+                disabled={isLoading}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+
+            <div className="login-input-group">
+              <label htmlFor="login-password" className="login-field-label">
+                รหัสผ่าน
+              </label>
+              <input
+                id="login-password"
+                data-testid="login-password"
+                className="login-text-input"
+                type="password"
+                autoComplete="current-password"
+                placeholder="รหัสผ่าน"
+                value={password}
+                disabled={isLoading}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="login-submit-btn"
+              data-testid="login-submit"
+              disabled={isLoading}
+            >
+              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            </button>
+          </form>
+        </div>
+      </div>
     </AppShell>
   )
 }
