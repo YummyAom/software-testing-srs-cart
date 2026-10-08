@@ -23,7 +23,7 @@ Request → Controller → Service → Repository → Supabase Auth → managed 
 
 ## Run
 
-Use Node 22/npm 11. Configure `backend/.env` with the names below; the example file has placeholders:
+Use Node 22/npm 11. Configure the shared repository-root `.env`, not `backend/.env` or `node_modules/.env`. Copy root `.env.example` only if `.env` does not already exist; it contains placeholders:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -36,10 +36,14 @@ From the repository root:
 
 ```sh
 npm ci
-npm run dev
+npm --prefix backend ci
+npm run dev:auth
 ```
 
-Or run `npm run dev` from `backend/`. Both use its `.env`; optional root `.env` is loaded first.
+Or run `npm run dev` from `backend/`. Both load only repository-root `.env`.
+Root `npm run dev` runs the separate mock cart API. Both APIs default to port 3000;
+run one at a time or override `API_PORT`. Use `npm run build:auth` and
+`npm run start:auth` for the compiled login API.
 Exported process variables take precedence. No server secret key or seed passwords are required.
 The API binds to `127.0.0.1`; `APP_ENV` defaults to `development` and accepts `test` as well.
 The existing production startup restriction remains in place.

@@ -16,6 +16,9 @@
   "scripts": {
     "dev": "npm run dev --workspace @cart/api",
     "start": "npm run start --workspace @cart/api",
+    "dev:auth": "npm --prefix backend run dev",
+    "build:auth": "tsc --build backend/tsconfig.build.json",
+    "start:auth": "npm --prefix backend run start",
     "typecheck": "tsc --project tsconfig.json",
     "build": "tsc --build tsconfig.build.json",
     "test": "vitest run",

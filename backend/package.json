@@ -10,8 +10,8 @@
     }
   },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=../.env --env-file-if-exists=.env src/index.ts",
-    "start": "node --env-file-if-exists=../.env --env-file-if-exists=.env dist/index.js"
+    "dev": "tsx watch --env-file-if-exists=../.env src/index.ts",
+    "start": "node --env-file-if-exists=../.env dist/index.js"
   },
   "dependencies": {
     "fastify": "5.12.5"
