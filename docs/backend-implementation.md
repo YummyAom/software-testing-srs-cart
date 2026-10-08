@@ -63,4 +63,16 @@ The in-memory adapter is not a production-scale database abstraction; real stora
 
 These are **mock-backed HTTP and pure-function tests**, not real database integration. SOI design defaults remain labelled; missing SRS expectations were not silently promoted into requirements. Browser/DC-2, real Auth/DB restart survival, migrations/RLS and hosted security are excluded. CI configuration is provided, but hosted execution is not claimed from local results.
 
-Existing uncommitted root README/spec/OpenAPI/database edits from another owner are preserved and excluded from backend commits. Delivery is on `feat/typescript-backend`; push/PR is authorized, merge is not.
+Existing uncommitted root README/spec/OpenAPI/database edits from another owner are preserved and excluded from backend commits. Delivery is on `feat/typescript-backend`; push/PR is authorized only after review, merge is not.
+
+## Independent review disposition
+
+Fresh Standards and Spec reviewers inspected the implemented range through `700a3c1`; both returned **OK with notes**, with no scoped business-behavior blocker. Parent additionally verified the final transport smoke/CI/runbook changes: strict typecheck/build, all **241 tests across 12 files**, and zero audit vulnerabilities locally. Hosted CI has not been verified.
+
+Three nonblocking P2 notes are retained for follow-up rather than obscured as complete:
+
+- Standards: canonical README/implementation-plan statements saying no app/commands exist are stale. Those files contain another owner's changes and were deliberately not staged; this runbook records current implementation status.
+- Spec/DESIGN: HTTP assertions do not yet perform automated OpenAPI schema validation for every operation. Shared DTOs and behavioral assertions are not a substitute for that gate.
+- Spec/DESIGN: all 36 shipping combinations are tested, but a generated pairwise matrix with coverage/tool metadata is not provided.
+
+Remote `main` also advanced with authentication-design and frontend work while this branch was implemented. The PR must be reviewed against that newer base; neither the frontend nor the real database is merged into or changed by this work. Resolve integration/auth decisions separately before promoting this local mock to production.
