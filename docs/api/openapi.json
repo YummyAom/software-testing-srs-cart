@@ -1,0 +1,2257 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SRS-CART-002 Implementation Design",
+    "version": "1.0.0",
+    "description": "Proposed Supabase implementation contract; SRS v1.8 authority; see companion SOI log. Not a deployed API."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Proposed separate API origin"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "operationId": "OP-1",
+        "summary": "OP-1",
+        "security": [],
+        "description": "Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoginResult"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error 503; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "operationId": "OP-2",
+        "summary": "OP-2",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "products": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "$ref": "#/components/schemas/Product"
+                              },
+                              {
+                                "$ref": "#/components/schemas/AdminProduct"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "products"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cart/items": {
+      "post": {
+        "operationId": "OP-3",
+        "summary": "OP-3",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [
+                  "productId",
+                  "quantity"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cart/items/{productId}": {
+      "put": {
+        "operationId": "OP-4",
+        "summary": "OP-4",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [
+                  "quantity"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "OP-5",
+        "summary": "OP-5",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cart/coupon": {
+      "put": {
+        "operationId": "OP-6",
+        "summary": "OP-6",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cart": {
+      "get": {
+        "operationId": "OP-7",
+        "summary": "OP-7",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cart/checkout": {
+      "post": {
+        "operationId": "OP-8",
+        "summary": "OP-8",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "customer": {
+                          "$ref": "#/components/schemas/UserState"
+                        },
+                        "order": {
+                          "$ref": "#/components/schemas/Order"
+                        }
+                      },
+                      "required": [
+                        "customer",
+                        "order"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "zone": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  },
+                  "speed": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [
+                  "zone",
+                  "speed"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "OP-9",
+        "summary": "OP-9",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cart": {
+                          "$ref": "#/components/schemas/Cart"
+                        },
+                        "order": {
+                          "$ref": "#/components/schemas/Order"
+                        }
+                      },
+                      "required": [
+                        "cart",
+                        "order"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{orderId}/pay-success": {
+      "post": {
+        "operationId": "OP-10",
+        "summary": "OP-10",
+        "security": [],
+        "description": "Test environment only. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "customer": {
+                          "$ref": "#/components/schemas/UserState"
+                        },
+                        "order": {
+                          "$ref": "#/components/schemas/Order"
+                        }
+                      },
+                      "required": [
+                        "customer",
+                        "order"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "success"
+                    ]
+                  }
+                },
+                "required": [
+                  "result"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/orders/{orderId}/pay-fail": {
+      "post": {
+        "operationId": "OP-11",
+        "summary": "OP-11",
+        "security": [],
+        "description": "Test environment only. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "customer": {
+                          "$ref": "#/components/schemas/UserState"
+                        },
+                        "order": {
+                          "$ref": "#/components/schemas/Order"
+                        }
+                      },
+                      "required": [
+                        "customer",
+                        "order"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "fail"
+                    ]
+                  }
+                },
+                "required": [
+                  "result"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cart/continue": {
+      "post": {
+        "operationId": "OP-12",
+        "summary": "OP-12",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cart"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "operationId": "OP-13",
+        "summary": "OP-13",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "orders": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrderSummary"
+                          }
+                        }
+                      },
+                      "required": [
+                        "orders"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{orderId}": {
+      "get": {
+        "operationId": "OP-14",
+        "summary": "OP-14",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Customer. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Order"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/products/{productId}": {
+      "put": {
+        "operationId": "OP-15",
+        "summary": "OP-15",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Admin. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminProduct"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  },
+                  "stock": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/products/{productId}/status": {
+      "post": {
+        "operationId": "OP-16",
+        "summary": "OP-16",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Admin. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminProduct"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/coupons/{code}/status": {
+      "post": {
+        "operationId": "OP-17",
+        "summary": "OP-17",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Admin. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "coupons": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Coupon"
+                          }
+                        }
+                      },
+                      "required": [
+                        "coupons"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error 400; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error 404; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "description": "Raw JSON value; validate in domain ordering, not a coercing transport validator."
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/admin/coupons": {
+      "get": {
+        "operationId": "OP-18",
+        "summary": "OP-18",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Role: Admin. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "coupons": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Coupon"
+                          }
+                        }
+                      },
+                      "required": [
+                        "coupons"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "support-auth-me",
+        "summary": "support-auth-me",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserState"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error 401; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/reset": {
+      "post": {
+        "operationId": "test-reset",
+        "summary": "test-reset",
+        "security": [
+          {
+            "testResetSecret": []
+          }
+        ],
+        "description": "Test environment only. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reset": {
+                          "const": true,
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "reset"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "messages"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error 403; consult error-code mapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Supabase access token"
+      },
+      "testResetSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Test-Reset-Token"
+      }
+    },
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "notice",
+              "info"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "UserState": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Customer",
+              "Admin"
+            ]
+          },
+          "memberTier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "normal",
+              "prime",
+              null
+            ]
+          },
+          "stage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "cart",
+              "checkout",
+              "success",
+              null
+            ]
+          },
+          "currentOrderId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "userId",
+          "username",
+          "role",
+          "memberTier",
+          "stage",
+          "currentOrderId"
+        ],
+        "additionalProperties": false
+      },
+      "LoginResult": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserState"
+          }
+        },
+        "required": [
+          "accessToken",
+          "tokenType",
+          "expiresIn",
+          "user"
+        ],
+        "additionalProperties": false
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "weightGram": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "availableStock": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "price",
+          "weightGram",
+          "availableStock"
+        ],
+        "additionalProperties": false
+      },
+      "AdminProduct": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "weightGram": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "availableStock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "onSale",
+              "offSale"
+            ]
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "price",
+          "weightGram",
+          "availableStock",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "Coupon": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "minSpend": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "percent",
+          "minSpend",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "CartLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "weightGram": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "unitPrice",
+          "weightGram",
+          "quantity",
+          "available"
+        ],
+        "additionalProperties": false
+      },
+      "Cart": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "cart",
+              "checkout",
+              "success"
+            ]
+          },
+          "currentOrderId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "couponCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checkoutEnabled": {
+            "type": "boolean"
+          },
+          "subtotal": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CartLine"
+            }
+          }
+        },
+        "required": [
+          "stage",
+          "currentOrderId",
+          "couponCode",
+          "lineCount",
+          "checkoutEnabled",
+          "subtotal",
+          "lines"
+        ],
+        "additionalProperties": false
+      },
+      "OrderLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "weightGram": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "unitPrice",
+          "quantity",
+          "weightGram"
+        ],
+        "additionalProperties": false
+      },
+      "OrderSummary": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "cancelled"
+            ]
+          },
+          "netTotal": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "orderId",
+          "createdAt",
+          "status",
+          "netTotal"
+        ],
+        "additionalProperties": false
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "cancelled"
+            ]
+          },
+          "netTotal": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          },
+          "subtotal": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "discount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shippingFee": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "zone": {
+            "type": "string",
+            "enum": [
+              "inCity",
+              "upcountry",
+              "remote"
+            ]
+          },
+          "speed": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "express"
+            ]
+          },
+          "couponCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "discountSource": {
+            "type": "string",
+            "enum": [
+              "coupon",
+              "member",
+              "none"
+            ]
+          },
+          "totalWeightGram": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "orderId",
+          "createdAt",
+          "status",
+          "netTotal",
+          "lines",
+          "subtotal",
+          "discount",
+          "shippingFee",
+          "zone",
+          "speed",
+          "couponCode",
+          "discountSource",
+          "totalWeightGram"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}
