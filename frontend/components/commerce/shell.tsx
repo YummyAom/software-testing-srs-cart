@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { ShoppingBag } from "lucide-react"
 import type { ReactNode } from "react"
+import { useAuth } from "@/src/context/auth-context"
 
 type AppRole = "guest" | "customer" | "admin"
 type ActivePage = "products" | "cart" | "checkout" | "success" | "orders" | "admin-products" | "admin-coupons"
@@ -35,13 +36,15 @@ const adminNavigation: NavigationItem[] = [
 
 export function AppShell({
   children,
-  role = "guest",
+  role: propRole,
   activePage,
 }: {
   children: ReactNode
   role?: AppRole
   activePage?: ActivePage
 }) {
+  const { user } = useAuth()
+  const role = propRole || (user?.role as AppRole) || "guest"
   const customerFlowHref = activePage === "checkout" ? "/checkout" : activePage === "success" ? "/success" : "/cart"
   const navigation =
     role === "customer"
