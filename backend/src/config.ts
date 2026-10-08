@@ -22,7 +22,10 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): { app: AppConf
   const app: AppConfig = {
     appEnv,
     uiOrigin: env.UI_ORIGIN ?? 'http://localhost:5173',
-    supabase: { url: url.origin, publishableKey: required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY') },
+    supabase: {
+      url: url.origin,
+      publishableKey: required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),
+    },
   };
   return { app, port };
 }

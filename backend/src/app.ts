@@ -4,6 +4,8 @@ import { registerAuthController } from './controllers/auth-controller.js';
 import { AuthService } from './services/auth-service.js';
 import { SupabaseAuthRepository } from './repositories/supabase-auth-repository.js';
 import type { SupabaseAuthConfig } from './repositories/supabase-auth-repository.js';
+import { registerSwagger } from './docs/swagger.js';
+import { SupabaseAppUserRepository } from './repositories/app-user-repository.js';
 
 export interface AppConfig {
   appEnv: 'development' | 'test';
@@ -20,7 +22,10 @@ export function createApp(config: AppConfig) {
     const origin = request.headers.origin;
     if (origin !== undefined) {
       reply.header('vary', 'Origin');
-      if (origin !== config.uiOrigin) reject('AUTH_FORBIDDEN');
+      // Swagger's Try it out posts from this API's own localhost origin.
+      const isLocalSameOrigin = ['127.0.0.1', 'localhost'].includes(request.hostname)
+        && origin === `${request.protocol}://${request.host}`;
+      if (origin !== config.uiOrigin && !isLocalSameOrigin) reject('AUTH_FORBIDDEN');
       reply.header('access-control-allow-origin', config.uiOrigin);
     }
   });
@@ -38,6 +43,10 @@ export function createApp(config: AppConfig) {
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Unable to process request' } });
   });
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
-  registerAuthController(app, new AuthService(new SupabaseAuthRepository(config.supabase)));
+  registerSwagger(app);
+  registerAuthController(app, new AuthService(
+    new SupabaseAuthRepository(config.supabase),
+    new SupabaseAppUserRepository(config.supabase),
+  ));
   return app;
 }

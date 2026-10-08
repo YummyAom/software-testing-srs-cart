@@ -1,8 +1,8 @@
 # Supabase Login API
 
-TypeScript + Fastify backend exposing only `POST /auth/login` and its CORS preflight.
-Credentials are verified by Supabase Auth. No mock sessions, cart, product, order, payment,
-reset, registration, token-verification middleware or `app_users` role lookup is implemented.
+TypeScript + Fastify backend exposing `POST /auth/login`, its CORS preflight, and Swagger documentation.
+Credentials are verified by Supabase Auth; username, role and membership come from `app_users`.
+No mock sessions, cart, product, order, payment, reset, registration or token-verification middleware is implemented.
 
 ## Structure
 
@@ -12,9 +12,12 @@ src/
 ├── config.ts                             Environment validation
 ├── app.ts                                Fastify setup, CORS and error handling
 ├── errors.ts                             HTTP validation helpers
+├── docs/swagger.ts                       Swagger UI and Login OpenAPI specification
 ├── controllers/auth-controller.ts        Validate login request and format HTTP response
 ├── services/auth-service.ts              Handle authentication outcomes
-└── repositories/supabase-auth-repository.ts  Call Supabase Auth
+└── repositories/
+    ├── supabase-auth-repository.ts        Call Supabase Auth
+    └── app-user-repository.ts             Read the authenticated user's app_users profile
 ```
 
 ```text
@@ -40,11 +43,35 @@ npm run dev
 ```
 
 Or run `npm run dev` from `backend/`. Both use its `.env`; optional root `.env` is loaded first.
-Exported process variables take precedence. No server secret key or seed passwords are required.
+Exported process variables take precedence. Only the two Supabase settings above are needed;
+no secret or service-role key is used. Profile queries send the publishable key in `apikey`
+and the freshly authenticated user's access token in `Authorization: Bearer ...`.
+
+Run [sql/enable-own-profile-read.sql](sql/enable-own-profile-read.sql) once in Supabase SQL Editor.
+It adds SELECT access only to `id`, `username`, `role`, `member_tier` and an own-row RLS policy.
+It does not grant writes or password-hash access. This deliberately changes the initial
+deny-all authenticated read setup, following [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+The SQL has not been applied remotely. Until grants/policy are installed, profile reads may
+return `503 AUTH_PROFILE_UNAVAILABLE`; rows hidden by RLS return `403 AUTH_PROFILE_NOT_FOUND`.
+
+For this Supabase Auth flow, `app_users.id` must match `auth.users.id`. The separate design
+with independently generated account IDs and backend-owned `password_hash` authentication
+is not compatible with this flow without further changes; it is not activated here.
 The API binds to `127.0.0.1`; `APP_ENV` defaults to `development` and accepts `test` as well.
 The existing production startup restriction remains in place.
 
 ## Login
+
+Swagger UI: **http://127.0.0.1:3000/docs/** (use your configured API port).
+Expand `POST /auth/login`, click **Try it out**, enter an existing Auth account's
+email/password, then click **Execute**. The request goes to the API serving the docs,
+so it also works with `localhost` or a custom port. Use your own password in place of the example.
+
+- OpenAPI JSON: `/docs/json`
+- OpenAPI YAML: `/docs/yaml`
+
+The spec documents success and all current error responses. It contains no env keys or real tokens.
+The implementation uses the [Fastify Swagger plugins](https://github.com/fastify/fastify-swagger-ui).
 
 Use an existing account created in Supabase Authentication:
 
@@ -64,21 +91,33 @@ Success (`200`):
     "refreshToken": "SUPABASE_REFRESH_TOKEN",
     "tokenType": "Bearer",
     "expiresIn": 3600,
-    "user": { "userId": "AUTH_USER_UUID", "email": "user@email.com" }
+    "user": {
+      "userId": "851cb40a-3d75-44bd-874a-9951ff57bbca",
+      "username": "admin_johndoe",
+      "email": "admin@email.com",
+      "role": "admin",
+      "memberTier": "free"
+    }
   },
   "messages": []
 }
 ```
 
-`expiresIn` is returned by Supabase. No role is inferred from Auth metadata.
+`expiresIn` is returned by Supabase. The profile is selected by the authenticated Auth user ID,
+never by a client-supplied ID. Username, role and tier come from `app_users`, not user-editable
+Auth metadata. Email comes from Auth. Database `Admin`/`Customer` map to `admin`/`customer`;
+`normal` and Admin `NULL` tier map to `free`, while `prime` stays `prime`.
+Examples do not create or rename database accounts; returned usernames reflect actual rows.
 
 | Result | HTTP | Error code |
 | --- | --- | --- |
 | Invalid input | 400 | `VALIDATION_ERROR` |
 | Invalid email/password | 401 | `AUTH_INVALID_CREDENTIALS` |
 | Email not confirmed | 403 | `AUTH_EMAIL_NOT_CONFIRMED` |
+| No matching app_users profile | 403 | `AUTH_PROFILE_NOT_FOUND` |
 | Provider rate limit | 429 | `AUTH_RATE_LIMITED` |
 | Provider/network/configuration failure | 503 | `AUTH_UNAVAILABLE` |
+| Profile lookup/configuration failure | 503 | `AUTH_PROFILE_UNAVAILABLE` |
 
 The repository uses Node `fetch` and the Supabase Auth password grant, with a per-request timeout
 and no shared session. Responses are `no-store`, and upstream error details are not exposed.
