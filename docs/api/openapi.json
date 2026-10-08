@@ -1758,7 +1758,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "Supabase access token"
+        "bearerFormat": "JWT",
+        "description": "Backend-issued HS256 JWT, not Supabase Auth. Required sub/iss/aud/iat/exp; TTL 3600 seconds (DESIGN). Invalid or expired bearer returns AUTH_REQUIRED. Role/tier are read from PostgreSQL."
       },
       "testResetSecret": {
         "type": "apiKey",
@@ -1892,7 +1893,8 @@
           },
           "expiresIn": {
             "type": "integer",
-            "minimum": 1
+            "const": 3600,
+            "description": "Backend JWT lifetime in seconds (DESIGN, not an SRS requirement)."
           },
           "user": {
             "$ref": "#/components/schemas/UserState"

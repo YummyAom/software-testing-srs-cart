@@ -83,7 +83,7 @@ Web UI และ api-server แบบ persistent monolith ใช้บัญช�
 - Checkout/cancel/paySuccess ใช้ transaction เดียว รวม stage, cart, coupon, stock, order และ snapshot
 - คง methods/paths และ HTTP status mapping ของ workbook; ทำ schema ที่แน่นอนสำหรับฟิลด์และ enum ที่ workbook ยังไม่กำหนด
 - quantity ใช้ชื่อเดียวทั้ง request/response; gateway ไม่บังคับ Customer bearer token เพราะ gateway authentication อยู่นอก scope ของ SRS
-- ใช้ Supabase Auth ผ่าน backend login adapter แปลง seeded username เป็น email ภายในและคืน bearer token; ownership จาก verified principal ไม่รับ customerId จาก client; ปิด signup และใช้ state bootstrap read-only เพื่อให้ stage routing ทำงานได้
+- ไม่ใช้ Supabase Auth: backend ตรวจ seeded username กับ Argon2id password_hash และออก/ตรวจ HS256 Bearer JWT เองด้วยมาตรฐาน library; Supabase ใช้เฉพาะ PostgreSQL. Ownership จาก verified principal ไม่รับ customerId จาก client; ไม่มี signup และใช้ state bootstrap read-only เพื่อให้ stage routing ทำงานได้. JWT TTL/claims/hash configuration เป็น DESIGN ไม่ใช่ SRS oracle
 - มี DB constraints สำหรับ invariant ที่ไม่ขัดกับ SRS และไม่มี upper stock constraint 9,999 ที่ทำให้การคืนสต็อกตาม snapshot ถูกปฏิเสธ
 - เก็บ integer บาท/กรัม, floor ใน pure functions, current cart valuation แยกจาก immutable order valuation; เปิด RLS และปิด direct browser access ของ domain tables; backend ใช้ server-only PostgreSQL credentials และ transaction บน connection เดียว
 - DC-1 signatures ทั้งหมดคงตามต้นฉบับ; route processing ต้องเรียกผ่าน orchestration ไม่เขียนสูตรซ้ำ

@@ -20,4 +20,8 @@
 - ไม่ได้ validate OpenAPI ด้วย external standards validator; JSON/reference checks ไม่เท่ากับ full schema conformance proof
 - ยังไม่มีคำยืนยัน seam แยก และ SOI ยังไม่ได้รับ clarification จากผู้สอน
 
+## Authentication design amendment
+
+ผู้ใช้เลือก backend-owned auth แทน Supabase Auth: backend spec, master/decisions, PostgreSQL schema proposal, OpenAPI, frontend auth notes, testing และ implementation plan ถูกปรับให้สอดคล้องกัน. app_users ใช้ own UUID/password_hash, Argon2id และ backend-issued HS256 JWT; Supabase เหลือ PostgreSQL. Token policies เป็น DESIGN และไม่เปลี่ยน SRS reservation lifetime. แก้เฉพาะเอกสาร ไม่แก้ source/test files ที่กำลังทำงานอยู่ และไม่ execute migration หรือ implement auth ในรอบนี้
+
 เอกสาร SQL/OpenAPI เป็น design artifacts สำหรับ implementation รอบถัดไป ไม่ใช่ code ของแอปที่ deploy แล้ว. ผู้ implement ต้องทดสอบ migration และ runtime contract ก่อนกล่าวว่าพร้อมใช้งาน

@@ -23,7 +23,7 @@
 
 ## เทคโนโลยีที่เสนอ (DESIGN)
 
-TypeScript strict, Node.js LTS, Fastify, Supabase (PostgreSQL + Auth), React + Vite + React Router, Vitest และ Playwright. เลือก monolith เดียวและ process เดียวตามสมมติฐานคำสั่งเรียงลำดับของ SRS; ห้ามตีความว่า deploy หลาย instance ได้
+TypeScript strict, Node.js LTS, Fastify, Supabase (PostgreSQL เท่านั้น), backend-owned authentication (Argon2id + Bearer JWT; ไม่ใช้ Supabase Auth), React + Vite + React Router, Vitest และ Playwright. เลือก monolith เดียวและ process เดียวตามสมมติฐานคำสั่งเรียงลำดับของ SRS; ห้ามตีความว่า deploy หลาย instance ได้
 
 ## GitHub workflow
 

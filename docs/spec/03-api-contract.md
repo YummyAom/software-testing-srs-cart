@@ -1,6 +1,6 @@
 # HTTP API contract (DESIGN refinement of workbook)
 
-Machine-readable definition: [OpenAPI 3.1](../api/openapi.json). API origin แยกจาก Web origin; paths ไม่มี prefix. JSON UTF-8, Accept/Content-Type application/json เมื่อมี body. Protected OPs use `Authorization: Bearer <Supabase access token>`. Successful collections unpaginated. No PUT body coercion/qty alias. Integers returned as JSON numbers in THB/grams; timestamps UTC ISO8601; IDs strings
+Machine-readable definition: [OpenAPI 3.1](../api/openapi.json). API origin แยกจาก Web origin; paths ไม่มี prefix. JSON UTF-8, Accept/Content-Type application/json เมื่อมี body. Protected OPs use `Authorization: Bearer <backend-issued JWT>`. Successful collections unpaginated. No PUT body coercion/qty alias. Integers returned as JSON numbers in THB/grams; timestamps UTC ISO8601; IDs strings
 
 ## Operations
 
@@ -34,7 +34,7 @@ OP-10/11 and reset exist only APP_ENV=test. Simulator has no Customer auth requi
 All successes: `{data: <operation data>, messages: Message[]}`. messages is always array, empty when none. Message: `{kind:"notice"|"info",code:string,message:string}`; info code is empty string. Error response is NOT wrapped in data: `{error:{code,message,details?}}` from workbook. Notice is success not 4xx
 
 - UserState: userId UUID, username, role Customer|Admin, memberTier normal|prime|null, stage cart|checkout|success|null, currentOrderId UUID|null. Admin tier/stage/reference null
-- LoginResult: accessToken, tokenType:"Bearer", expiresIn integer seconds, user:UserState. No refresh token/credential/internal email exposed
+- LoginResult: accessToken (backend-issued HS256 JWT), tokenType:"Bearer", expiresIn=3600 seconds (DESIGN), user:UserState. No refresh token/password_hash/credential exposed. Backend verifies required sub/iss/aud/iat/exp and reads role/tier from DB; not Supabase Auth. Invalid/missing/expired token =>401 AUTH_REQUIRED; token expiry never cancels pending orders
 - Product: productId,name,price,weightGram,availableStock. Customer result omits sale status. AdminProduct adds status:onSale|offSale
 - Cart: stage,currentOrderId,couponCode:string|null,lineCount,checkoutEnabled,subtotal,lines:CartLine[]. CartLine: productId,name,unitPrice,weightGram,quantity,available:boolean. Live product values used in every read
 - Coupon: code,percent,minSpend,status:active|inactive
