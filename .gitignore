@@ -1,3 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.vitest/
+.env
+.env.*
+!.env.example
+npm-debug.log*
 # Operating System Files
 .DS_Store
 .DS_Store?
