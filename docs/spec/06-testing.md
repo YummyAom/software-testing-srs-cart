@@ -9,9 +9,24 @@ All SRS tests expected values must cite FR/AC and independent manual arithmetic/
 ## Test levels
 
 1. Unit: 10 pure functions with exported exact signatures. Inputs explicit, outputs/error precedence per DC/FR. No DB/HTTP/time mocks needed. classifyWeight zero/negative excluded until clarification.
-2. Contract/service: actual API factory listening/injection plus real local Supabase Auth+PG. Auth integration uses genuine test seeded identities/access tokens. Validate OpenAPI success/error schema, authorization, state transitions, stock, snapshots, isolation. Capture public read views for all Customer/Admin contexts before and after rejection; supplement domain-table state comparison through test fixture when state isn't externally visible, not as replacement for behavioral checks.
+2. Contract/service: actual API factory listening/injection plus real local Supabase PostgreSQL. Auth integration login ผ่าน backend ด้วย seeded username/password และตรวจ backend-issued JWT จริง ไม่มี Supabase Auth dependency หรือ mocked principal. Validate OpenAPI success/error schema, authorization, state transitions, stock, snapshots, isolation. Capture public read views for all Customer/Admin contexts before and after rejection; supplement domain-table state comparison through test fixture when state isn't externally visible, not as replacement for behavioral checks.
 3. E2E: Playwright with browser per Customer/Admin identity, real API/local DB, deterministic seed reset. Use roles/labels and specified IDs/attributes. Gateway buttons only test. Read values from data-value/status/available, not parsed localized strings.
 4. Security/operational DESIGN checks: anon/authenticated direct Supabase table SELECT/INSERT/UPDATE/DELETE denied; no client keys capable of writes; reset/callback routes absent outside test; transaction rollback on injected database failure. No race-condition campaign required
+
+## Backend-owned authentication test design
+
+SRS-derived cases: valid/invalid seeded credentials (FR-0.1), unauthenticated protected requests (FR-0.2), wrong role (FR-0.3), Customer isolation/ownership (FR-0.4/0.5), rejected operations no domain changes (FR-0.7), repeated login preserves cart/coupon/stage/pending order/reservation (FR-1.2).
+
+DESIGN cases (ไม่อ้างเป็น SRS oracle):
+- Login returns same DTO/Bearer header contract, expiresIn3600; unknown username and wrong password same outward error, hashes never exposed. No Supabase Auth calls/provider service dependency.
+- Verify Argon2id encoded hashes with fixture password, reject wrong password; salts differ per account. Assert behavior ไม่ compare literal hash bytes; seeding repeated preserves UUID/hash.
+- Missing/malformed bearer, forged signature, wrong key, alg=none/non-HS256, wrong/missing iss/aud/sub/iat/exp, unknown user, future iat =>401 AUTH_REQUIRED. Never allow injected role/tier claims to grant access.
+- Inject auth clock privately for deterministic exp boundaries: now=exp-1 accepts valid token, now=exp rejects. Do not add test HTTP endpoint or wait one hour in E2E.
+- DB unavailable during login/principal lookup =>sanitized infrastructure error, not AUTH_INVALID_CREDENTIALS/AUTH_REQUIRED. Wrong credentials must not mutate app_users/password_hash or any business state.
+- Backend restart with same signing secret keeps valid JWT usable; key change invalidates old token without altering cart/order/stock. TTL expiration followed by login resumes same pending order, no reservation release.
+- Test reset preserves app_users/hashes and does not promise JWT revocation. Fresh clients/login per test; do not trust claims as Supabase RLS identity.
+
+Auth clock/config seam is internal and limited to token policy tests; main service seam remains real HTTP+PG. Tests must exercise backend verifier, not replace it with fake authorization middleware
 
 ## ECT/BVA inventory
 
@@ -81,6 +96,6 @@ Each AC starts reset seed unless Given says otherwise, independent of neighborin
 
 ## Isolation / CI / release gates
 
-Use one test worker for any suite sharing a resettable domain DB; otherwise separate whole Supabase stacks/projects per worker. Serial project settings alone must also prevent service/E2E suites resetting each other. Auth seeded once, beforeEach reset domain state and new browser context. No live credentials in CI output. Use local Supabase CLI pinned version, Docker readiness checks and migrations before tests. Never silently skip integration tests because DB is missing
+Use one test worker for any suite sharing a resettable domain DB; otherwise separate whole Supabase stacks/projects per worker. Serial project settings alone must also prevent service/E2E suites resetting each other. Backend app_users with Argon2id hashes seeded once, beforeEach reset domain state and new browser context; no Supabase Auth provisioning. No live credentials in CI output. Use local Supabase CLI pinned version, Docker readiness checks and migrations before tests. Never silently skip integration tests because DB is missing
 
 Implementation acceptance: lint+typecheck, 10-function unit suite, service suite/all AC, contract validation, E2E/DC attributes, local RLS deny tests, non-test reset/callback absence, migration+seed from empty local stack, documented commands and screenshots/reports. Upload test artifacts on failure with secrets redacted. Requirement traceability checked independently from line coverage. Final handoff reports actual command outcomes, not unexecuted plan as passing tests

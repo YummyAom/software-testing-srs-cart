@@ -14,7 +14,7 @@ SRS v1.8 เป็น baseline. Workbook ใช้สำหรับ methods/pat
 | D-04 | status mapping cells | ยึด shared mapping ของ workbook: business rejection 400, auth 401/403, missing resources 404, checkout 201, อื่น 200 |
 | D-05 | OP-17 response | คืน coupons ทั้งหมดหลัง toggle ตาม workbook ไม่ใช่ coupon เดียว |
 | D-06 | HTTP base | Paths เดิม ไม่มี `/api` prefix ใน contract; development proxy แยก API origin กับ UI origin ไม่ให้ GET /products และ GET /orders ชนกัน |
-| D-07 | database | Supabase PostgreSQL + Supabase Auth ตามผู้ใช้; transaction ผ่าน backend PostgreSQL driver ไม่ทำ REST calls ทีละ table |
+| D-07 | database/auth ownership | Supabase ใช้เฉพาะ PostgreSQL; ผู้ใช้เลือก backend-owned auth เพื่อ software testing: seeded username/password_hash (Argon2id), backend-issued/verified HS256 JWT, own user UUID ไม่ FK auth.users; transaction ผ่าน backend PostgreSQL driver ไม่ทำ REST calls ทีละ table |
 | D-08 | stage bootstrap | เพิ่ม `GET /auth/me` read-only technical support ไม่ใช่ business OP; คืน role/tier/stage/currentOrderId เพื่อ direct URL routing |
 | D-09 | reset | เพิ่ม `POST /test/reset` เฉพาะ APP_ENV=test + test-only secret. ปิด route นอก test ไม่ใช่แค่ซ่อนปุ่ม |
 | D-10 | stock upper bound | 9,999 คือ input bound ของ updateProduct ไม่ใช่ storage invariant: reserve 3, admin set stock 9999, cancel => 10002 ตาม FR-7.1.2 |
@@ -24,11 +24,15 @@ SRS v1.8 เป็น baseline. Workbook ใช้สำหรับ methods/pat
 | D-14 | frontend reads | /products, /orders, /orders/:id เป็น read-only pages ทุก stage ตาม FR-8.5.2; stage guard บังคับเฉพาะ /cart,/checkout,/success (ดู SOI-03) |
 | D-15 | serialization | หนึ่ง backend instance, FIFO queue สำหรับทุก domain operation ที่อ่าน/เขียน state; ไม่มี browser write, background stock expiry หรือ automation แก้ domain tables |
 
+## Authentication design clarification
+
+Backend-owned auth แทน Supabase Auth โดยไม่เปลี่ยน OP-1 หรือ error mapping เดิม. DESIGN: HS256 JWT TTL3600 seconds, required sub/iss/aud/iat/exp, clock tolerance0, role/tier อ่าน DB, no refresh/logout/revocation endpoints. Argon2id parameters/username case-sensitivity/JWT negative cases เป็น contract-design tests ไม่ใช่ expected behavior ที่ SRS กำหนด. Token expiry ไม่ใช่ reservation expiry
+
 ## SOI — ไม่สร้าง SRS expected value จนกว่าจะมี clarification
 
 | SOI | Gap | simplest implementation / disposition | Test policy |
 |---|---|---|---|
-| SOI-01 | SRS ไม่ระบุ passwords ของ seed | Seed passwords จาก env; test fixture กำหนด `cart-test-only-password` เฉพาะ local test. Supabase Auth identities ใช้ emails ภายในที่กำหนดโดย seeder | Test auth ด้วย configured fixtures; ไม่อ้างว่า password นี้มาจาก SRS |
+| SOI-01 | SRS ไม่ระบุ passwords ของ seed | Seed passwords จาก env; test fixture กำหนด `cart-test-only-password` เฉพาะ local test. Backend accounts ใช้ own UUID และ Argon2id hashes ไม่มี email/provider mapping | Test auth ด้วย configured fixtures; ไม่อ้างว่า password นี้มาจาก SRS |
 | SOI-02 | status input ผิด enum ใน OP-16/17 ไม่ได้ระบุ error/precedence | สำหรับ existing resource ใช้ VALIDATION_ERROR details.fields=[status]; missing resource ตรวจก่อน. valid enum cases ตาม FR เท่านั้น | Contract-design tests ได้; ไม่มี SRS expected oracle สำหรับ invalid status |
 | SOI-03 | DC-2.13 กล่าวกว้างว่าหน้า Customer ต้องตรง stage แต่ FR-8.5.2 ให้อ่าน products/orders/cart ทุก stage | DESIGN: guard workflow pages เท่านั้น; API read ได้ทุก stage. Products ยังดูได้แต่ add disabled เมื่อไม่ใช่ cart. orders/detail ยังเข้าได้ | ให้ผู้สอนยืนยัน UI guard scope; ห้ามอ้างว่าข้อนี้ปิดแล้ว |
 | SOI-04 | auth/role/stage error precedence ข้ามกลุ่มไม่ได้ระบุ | DESIGN: auth -> role -> stage -> operation-specific ordering; callback: order exists -> stage/status. Preserve FR-2.6/5.2.1/9.1.1 strictly | SRS tests ใช้ preconditions isolate; cross-group precedence เป็น design tests |

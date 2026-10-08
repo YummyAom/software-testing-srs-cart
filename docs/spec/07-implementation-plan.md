@@ -11,7 +11,7 @@ Read baseline SRS (including DC), original API workbook, master spec, decisions/
 - packages/domain: exact SRS DC-1 functions and types; no I/O dependencies
 - packages/contracts: generated/shared DTO types consistent with OpenAPI
 - supabase/migrations: ordered PostgreSQL schema migrations; never rewrite applied migration
-- scripts: Auth account provisioning, controlled seed, isolated test reset helpers
+- scripts: backend app_users/password_hash seed (no Supabase Auth APIs), controlled domain seed, isolated test reset helpers
 - tests/service and tests/e2e: observable interface tests and fixture ownership
 
 Use npm workspaces initially, lockfile and pinned major dependency choices, Node LTS documented. No microservices, event bus, separate per-table repositories or generated abstractions unless implementation actually needs them
@@ -21,9 +21,9 @@ Use npm workspaces initially, lockfile and pinned major dependency choices, Node
 | Step | Deliverable / dependencies | Acceptance / stop conditions |
 |---|---|---|
 | 1 | scaffold TS strict, API/web shells, local Supabase CLI stack, env.example, CI entry points | local stack ready, typecheck, no committed secrets |
-| 2 | timestamped schema migration from proposal, RLS, Auth seeder and domain seeds | seed exact FR-7 values, browser table access denied, reset guarded; test migration/constraints on local Postgres |
+| 2 | timestamped schema migration from proposal, RLS, backend account/hash seeder and domain seeds | seed exact FR-7 values, browser table access denied, reset guarded; test migration/constraints on local Postgres |
 | 3 | pure functions preserving all10 exact signatures | unit ECT/BVA/DT/shipping tests with independent oracles green |
-| 4 | OP-1/2, GET /auth/me, role/ownership auth | correct seeded identities, no state resets on login, missing/expired token codes |
+| 4 | backend-owned Argon2id credential verification + HS256 JWT, OP-1/2, GET /auth/me, role/ownership auth | seeded app_users login without Supabase Auth, token-design cases and SRS auth tests, no state resets on login |
 | 5 | OP-3..7 with real persistence, response envelope/messages | ordered errors, row count, live cart pricing, coupon binding on empty, rollback |
 | 6 | OP-8/9/10/11/12 transactional workflow | AC4..13,17,18 + fail/retry/relogin/stock restoration; no expiry/double stock |
 | 7 | OP-13..18 | owned order snapshots/newest-first, Admin validation/all fields/status/coupons; no Admin orders |
@@ -39,7 +39,7 @@ Prefer test-first vertical slices but do not create all failing suites in advanc
 - All10 DC functions exported as exact TypeScript signatures and invoked from route execution; no duplicated business formulas.
 - Persistent per-user cart/coupon/stage/current pending order across login; immutable order snapshots.
 - Atomic business writes using one transaction client; any domain rejection no state change.
-- Supabase account provisioning/migrations/seed/reset reproducible locally; RLS enabled, client roles denied all domain tables.
+- Supabase PostgreSQL migrations and backend account/hash seed/reset reproducible locally; no auth.users FK/Auth API calls; RLS enabled, client roles denied credential/domain tables.
 - Semantic, labeled, keyboard-usable pages with all mandatory IDs/data attributes/URLs and explicit status/message rendering.
 - CI executes unit/service/E2E against local isolated Supabase, not shared cloud DB; tests not skipped on missing infra.
 - README commands for start/migrate/seed/reset/test and troubleshooting; env.example placeholders only.
@@ -51,7 +51,7 @@ Prefer test-first vertical slices but do not create all failing suites in advanc
 
 ## Supabase deployment handoff checklist
 
-Human supplies intended project URL and server-only DB/secret credentials outside GitHub files. Implementer can provision local stack without cloud credentials. Confirm linked cloud project before migrations; disable signup, configure email-confirmed seeded identities, set secrets via hosting secret store, allow API UI origin, run one API instance. No UI service role/DB URL. Do not run test reset or local test passwords on cloud demo. Verify OP-10/11 test scope before making any public demo; real payment integration requires a new spec
+Human supplies intended PostgreSQL connection credentials and random backend JWT signing secret outside GitHub files. Implementer can provision local stack without cloud credentials. Confirm linked cloud project before migrations; seed own app_users UUIDs/Argon2id hashes, configure AUTH_JWT_SECRET_BASE64/ISSUER/AUDIENCE via secret store, allow API UI origin, run one API instance. No Supabase Auth signup/email provisioning or service-role dependency. No UI signing secret/DB URL. Do not run test reset or local test passwords on cloud demo. Verify OP-10/11 test scope before making any public demo; real payment integration requires a new spec
 
 ## Agent final report format
 

@@ -1,10 +1,11 @@
 -- DESIGN: proposed Supabase PostgreSQL initial migration.
--- Requires Supabase auth.users. Review before deploying; this file was not applied remotely.
+-- Supabase PostgreSQL only; backend-owned auth, no auth.users dependency.
+-- Review before deploying; this design artifact was not applied remotely.
 begin;
 create table public.app_users (
-  id uuid primary key references auth.users(id),
+  id uuid primary key default gen_random_uuid(),
   username text collate "C" not null unique,
-  auth_email text not null unique,
+  password_hash text not null check (length(password_hash) > 0),
   role text not null check (role in ('Customer','Admin')),
   member_tier text,
   check ((role='Customer' and member_tier is not null and member_tier in ('normal','prime'))
@@ -136,7 +137,9 @@ revoke all on function public.protect_order_snapshot(),public.protect_order_line
   public.check_customer_workflow() from public,anon,authenticated;
 commit;
 
--- Seed app_users after provisioning Auth identities; never hardcode auth UUIDs here.
+-- Seed app_users with own UUIDs and library-generated Argon2id hashes.
+-- Hash configured passwords before the seed transaction; never seed plaintext here.
+-- No Supabase Auth provisioning, email mapping or token/session tables.
 -- Seed products/coupons in a separate controlled seeder transaction:
 -- P1: Coffee Beans 250g,450,300,20,onSale
 -- P2: Drip Kettle,1200,900,3,onSale
