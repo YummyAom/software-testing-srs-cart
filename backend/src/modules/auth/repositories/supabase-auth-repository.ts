@@ -1,9 +1,9 @@
-import type { SupabaseAuthConfig } from '../interfaces/config.js';
-import type { AuthRepository, LoginOutcome } from '../interfaces/repositories.js';
+import type { SupabaseAuthConfig } from '../../../interfaces/config.js';
+import type { AuthRepository, LoginOutcome } from '../../../interfaces/repositories.js';
 
-export type { SupabaseAuthConfig } from '../interfaces/config.js';
-export type { AuthSession } from '../interfaces/auth.js';
-export type { AuthRepository, LoginOutcome } from '../interfaces/repositories.js';
+export type { SupabaseAuthConfig } from '../../../interfaces/config.js';
+export type { AuthSession } from '../../../interfaces/auth.js';
+export type { AuthRepository, LoginOutcome } from '../../../interfaces/repositories.js';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -12,6 +12,22 @@ function isObject(value: unknown): value is Record<string, unknown> {
 /** Uses Supabase Auth's password grant; no shared mutable session or password storage. */
 export class SupabaseAuthRepository implements AuthRepository {
   constructor(private readonly config: SupabaseAuthConfig) {}
+
+  async signOut(accessToken: string): Promise<'success' | 'invalid_token' | 'unavailable'> {
+    try {
+      const response = await fetch(new URL('/auth/v1/logout?scope=local', this.config.url), {
+        method: 'POST',
+        headers: { apikey: this.config.publishableKey, Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(10_000),
+        redirect: 'error',
+      });
+      if (response.status === 204) return 'success';
+      if (response.status === 401 || response.status === 403) return 'invalid_token';
+      return 'unavailable';
+    } catch {
+      return 'unavailable';
+    }
+  }
 
   async signIn(email: string, password: string): Promise<LoginOutcome> {
     try {

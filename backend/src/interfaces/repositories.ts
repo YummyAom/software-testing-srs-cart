@@ -10,6 +10,7 @@ export type LoginOutcome =
 
 export interface AuthRepository {
   signIn(email: string, password: string): Promise<LoginOutcome>;
+  signOut(accessToken: string): Promise<'success' | 'invalid_token' | 'unavailable'>;
 }
 
 export type AppUserOutcome =

@@ -1,6 +1,6 @@
-# Supabase Login API
+# Supabase Auth API
 
-TypeScript + Fastify backend exposing `POST /auth/login`, its CORS preflight, and Swagger documentation.
+TypeScript + Fastify backend exposing `POST /auth/login`, `POST /auth/logout`, their CORS preflights, and Swagger documentation.
 Credentials are verified by Supabase Auth; username, role and membership come from `app_users`.
 No mock sessions, cart, product, order, payment, reset, registration or token-verification middleware is implemented.
 
@@ -20,15 +20,18 @@ src/
 │   ├── http.ts                           HTTP error codes
 │   └── index.ts                          Type exports
 ├── docs/swagger.ts                       Swagger UI and Login OpenAPI specification
-├── controllers/auth-controller.ts        Validate login request and format HTTP response
-├── services/auth-service.ts              Handle authentication outcomes
-└── repositories/
-    ├── supabase-auth-repository.ts        Call Supabase Auth
-    └── app-user-repository.ts             Read the authenticated user's app_users profile
+└── modules/
+    └── auth/
+        ├── auth-routes.ts                Register auth URLs, preflights and dependencies
+        ├── auth-controller.ts            Validate login request and format HTTP response
+        ├── auth-service.ts               Handle authentication outcomes
+        └── repositories/
+            ├── supabase-auth-repository.ts  Call Supabase Auth
+            └── app-user-repository.ts       Read the authenticated user's app_users profile
 ```
 
 ```text
-Request → Controller → Service → Repository → Supabase Auth → managed Auth database
+Request → Auth route → Controller → Service → Repository → Supabase
 ```
 
 All layers import shared contracts from `src/interfaces/`. For example:
@@ -36,6 +39,9 @@ All layers import shared contracts from `src/interfaces/`. For example:
 ```ts
 import type { LoginRequest, LoginResponse, LoginUser, AuthTokens } from './interfaces/index.js';
 ```
+
+Add future feature groups under `src/modules/` with their own route, controller and service files.
+Register each group's routes in `app.ts`; keep cross-feature configuration and HTTP helpers at the top level.
 
 ## Run
 
@@ -135,6 +141,22 @@ Examples do not create or rename database accounts; returned usernames reflect a
 The repository uses Node `fetch` and the Supabase Auth password grant, with a per-request timeout
 and no shared session. Responses are `no-store`, and upstream error details are not exposed.
 
+## Logout
+
+Send the access token returned by Login in the `Authorization` header:
+
+```http
+POST http://127.0.0.1:3000/auth/logout
+Authorization: Bearer SUPABASE_JWT
+```
+
+Success returns `204` with an empty body. The API asks Supabase Auth to revoke only the current
+session (`scope=local`); the client must then discard its stored access and refresh tokens.
+Missing or malformed Bearer headers return `401 AUTH_REQUIRED`, an invalid or expired token
+returns `401 AUTH_INVALID_TOKEN`, and provider failure returns `503 AUTH_UNAVAILABLE`.
+Supabase access tokens remain valid until their expiry even after logout, so clients must not
+keep using the old access token.
+
 ## Verify
 
 From the repository root:
@@ -142,10 +164,4 @@ From the repository root:
 ```sh
 npm run typecheck
 npm run build
-npm run test:service
-npm test
 ```
-
-Service tests cover Login; the transport test uses a local simulated Auth HTTP server.
-Tests never load real Supabase credentials. Other reusable domain packages in the repository
-are independent of this API and retain their own unit tests.

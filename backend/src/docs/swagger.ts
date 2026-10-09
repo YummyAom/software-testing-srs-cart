@@ -15,9 +15,9 @@ const specification: StaticDocumentSpec = {
   document: {
     openapi: '3.0.3',
     info: {
-      title: 'Supabase Login API',
+      title: 'Supabase Auth API',
       version: '1.0.0',
-      description: 'Email/password login through Supabase Auth, with username, role and membership loaded from app_users.',
+      description: 'Email/password login and current-session logout through Supabase Auth, with username, role and membership loaded from app_users.',
     },
     servers: [{ url: '/', description: 'Current API server' }],
     tags: [{ name: 'Auth', description: 'Authentication' }],
@@ -77,8 +77,35 @@ const specification: StaticDocumentSpec = {
           },
         },
       },
+      '/auth/logout': {
+        post: {
+          operationId: 'logout',
+          tags: ['Auth'],
+          summary: 'Log out the current session',
+          description: 'Revokes the current Supabase session refresh token. The client must discard its stored tokens. An issued access token remains valid until it expires.',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '204': { description: 'Current session logged out' },
+            '401': {
+              description: 'Bearer token is missing, invalid or expired',
+              content: { 'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+                examples: {
+                  missing: { value: { error: { code: 'AUTH_REQUIRED', message: 'Bearer access token is required' } } },
+                  invalid: { value: { error: { code: 'AUTH_INVALID_TOKEN', message: 'Invalid or expired access token' } } },
+                },
+              } },
+            },
+            '403': errorResponse('Request Origin is not allowed', 'AUTH_FORBIDDEN', 'Origin or request is not allowed'),
+            '503': errorResponse('Supabase Auth is unavailable', 'AUTH_UNAVAILABLE', 'Authentication service is unavailable'),
+          },
+        },
+      },
     },
     components: {
+      securitySchemes: {
+        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      },
       schemas: {
         LoginRequest: {
           type: 'object', required: ['email', 'password'], additionalProperties: false,

@@ -1,7 +1,7 @@
-import type { LoginSession } from '../interfaces/auth.js';
-import type { AuthRepository, AppUserRepository } from '../interfaces/repositories.js';
+import type { LoginSession } from '../../interfaces/auth.js';
+import type { AuthRepository, AppUserRepository } from '../../interfaces/repositories.js';
 
-export type { LoginSession } from '../interfaces/auth.js';
+export type { LoginSession } from '../../interfaces/auth.js';
 
 export class AuthServiceError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) {
@@ -11,6 +11,12 @@ export class AuthServiceError extends Error {
 
 export class AuthService {
   constructor(private readonly repository: AuthRepository, private readonly users: AppUserRepository) {}
+
+  async logout(accessToken: string): Promise<void> {
+    const result = await this.repository.signOut(accessToken);
+    if (result === 'invalid_token') throw new AuthServiceError(401, 'AUTH_INVALID_TOKEN', 'Invalid or expired access token');
+    if (result === 'unavailable') throw new AuthServiceError(503, 'AUTH_UNAVAILABLE', 'Authentication service is unavailable');
+  }
 
   async login(email: string, password: string): Promise<LoginSession> {
     const result = await this.repository.signIn(email, password);

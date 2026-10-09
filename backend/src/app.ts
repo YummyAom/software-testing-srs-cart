@@ -1,11 +1,8 @@
 import Fastify from 'fastify';
 import { HttpError, reject } from './errors.js';
-import { registerAuthController } from './controllers/auth-controller.js';
-import { AuthService } from './services/auth-service.js';
-import { SupabaseAuthRepository } from './repositories/supabase-auth-repository.js';
+import { registerAuthRoutes } from './modules/auth/auth-routes.js';
 import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
-import { SupabaseAppUserRepository } from './repositories/app-user-repository.js';
 
 export type { AppConfig } from './interfaces/config.js';
 
@@ -25,13 +22,6 @@ export function createApp(config: AppConfig) {
       reply.header('access-control-allow-origin', config.uiOrigin);
     }
   });
-  app.options('/auth/login', async (request, reply) => {
-    const method = request.headers['access-control-request-method'];
-    const requestedHeaders = request.headers['access-control-request-headers'];
-    if (request.headers.origin !== config.uiOrigin || method !== 'POST'
-      || (requestedHeaders !== undefined && (typeof requestedHeaders !== 'string' || requestedHeaders.split(',').some(h => h.trim().toLowerCase() !== 'content-type')))) reject('AUTH_FORBIDDEN');
-    return reply.header('access-control-allow-methods', 'POST').header('access-control-allow-headers', 'Content-Type').code(204).send();
-  });
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof HttpError) return reply.code(error.status).send({ error: { code: error.code, message: error.message, ...(error.details ? { details: error.details } : {}) } });
     if (error instanceof Error && 'code' in error && (error.code === 'FST_ERR_CTP_INVALID_JSON_BODY' || error.code === 'FST_ERR_CTP_EMPTY_JSON_BODY')) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: new HttpError('VALIDATION_ERROR').message } });
@@ -40,9 +30,6 @@ export function createApp(config: AppConfig) {
   });
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
   registerSwagger(app);
-  registerAuthController(app, new AuthService(
-    new SupabaseAuthRepository(config.supabase),
-    new SupabaseAppUserRepository(config.supabase),
-  ));
+  registerAuthRoutes(app, config.supabase, config.uiOrigin);
   return app;
 }

@@ -1,8 +1,8 @@
-import type { SupabaseAuthConfig } from '../interfaces/config.js';
-import type { AppUserOutcome, AppUserRepository } from '../interfaces/repositories.js';
+import type { SupabaseAuthConfig } from '../../../interfaces/config.js';
+import type { AppUserOutcome, AppUserRepository } from '../../../interfaces/repositories.js';
 
-export type { AppUser } from '../interfaces/user.js';
-export type { AppUserOutcome, AppUserRepository } from '../interfaces/repositories.js';
+export type { AppUser } from '../../../interfaces/user.js';
+export type { AppUserOutcome, AppUserRepository } from '../../../interfaces/repositories.js';
 
 /** Profile lookup with the authenticated user's JWT and RLS, never Auth metadata roles. */
 export class SupabaseAppUserRepository implements AppUserRepository {
