@@ -1,7 +1,7 @@
-import type { AppConfig } from './app.js';
+import type { AppConfig, ServerConfig } from './interfaces/config.js';
 
 /** Supabase credentials are required; there is no mock fallback. */
-export function readConfig(env: NodeJS.ProcessEnv = process.env): { app: AppConfig; port: number } {
+export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const appEnv = env.APP_ENV ?? 'development';
   if (env.NODE_ENV === 'production' || (appEnv !== 'development' && appEnv !== 'test')) {
     throw new Error('Local login API requires development/test APP_ENV; production is unsupported');

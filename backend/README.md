@@ -12,6 +12,13 @@ src/
 ├── config.ts                             Environment validation
 ├── app.ts                                Fastify setup, CORS and error handling
 ├── errors.ts                             HTTP validation helpers
+├── interfaces/                           Shared TypeScript contracts
+│   ├── auth.ts                           Login request, tokens, sessions and response
+│   ├── user.ts                           Database profile, Auth user and API user
+│   ├── repositories.ts                   Repository interfaces and outcomes
+│   ├── config.ts                         Supabase, application and server config
+│   ├── http.ts                           HTTP error codes
+│   └── index.ts                          Type exports
 ├── docs/swagger.ts                       Swagger UI and Login OpenAPI specification
 ├── controllers/auth-controller.ts        Validate login request and format HTTP response
 ├── services/auth-service.ts              Handle authentication outcomes
@@ -22,6 +29,12 @@ src/
 
 ```text
 Request → Controller → Service → Repository → Supabase Auth → managed Auth database
+```
+
+All layers import shared contracts from `src/interfaces/`. For example:
+
+```ts
+import type { LoginRequest, LoginResponse, LoginUser, AuthTokens } from './interfaces/index.js';
 ```
 
 ## Run

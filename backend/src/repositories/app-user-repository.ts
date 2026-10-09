@@ -1,22 +1,12 @@
-export interface AppUser {
-  id: string;
-  username: string;
-  role: 'Admin' | 'Customer';
-  memberTier: 'normal' | 'prime' | null;
-}
+import type { SupabaseAuthConfig } from '../interfaces/config.js';
+import type { AppUserOutcome, AppUserRepository } from '../interfaces/repositories.js';
 
-export type AppUserOutcome =
-  | { kind: 'found'; user: AppUser }
-  | { kind: 'not_found' }
-  | { kind: 'unavailable' };
-
-export interface AppUserRepository {
-  findByAuthId(userId: string, accessToken: string): Promise<AppUserOutcome>;
-}
+export type { AppUser } from '../interfaces/user.js';
+export type { AppUserOutcome, AppUserRepository } from '../interfaces/repositories.js';
 
 /** Profile lookup with the authenticated user's JWT and RLS, never Auth metadata roles. */
 export class SupabaseAppUserRepository implements AppUserRepository {
-  constructor(private readonly config: { url: string; publishableKey: string }) {}
+  constructor(private readonly config: SupabaseAuthConfig) {}
 
   async findByAuthId(userId: string, accessToken: string): Promise<AppUserOutcome> {
     const url = new URL('/rest/v1/app_users', this.config.url);

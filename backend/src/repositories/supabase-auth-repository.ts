@@ -1,26 +1,9 @@
-export interface SupabaseAuthConfig {
-  url: string;
-  publishableKey: string;
-}
+import type { SupabaseAuthConfig } from '../interfaces/config.js';
+import type { AuthRepository, LoginOutcome } from '../interfaces/repositories.js';
 
-export interface AuthSession {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: 'Bearer';
-  expiresIn: number;
-  user: { userId: string; email: string };
-}
-
-export type LoginOutcome =
-  | { kind: 'success'; session: AuthSession }
-  | { kind: 'invalid_credentials' }
-  | { kind: 'email_not_confirmed' }
-  | { kind: 'rate_limited' }
-  | { kind: 'unavailable' };
-
-export interface AuthRepository {
-  signIn(email: string, password: string): Promise<LoginOutcome>;
-}
+export type { SupabaseAuthConfig } from '../interfaces/config.js';
+export type { AuthSession } from '../interfaces/auth.js';
+export type { AuthRepository, LoginOutcome } from '../interfaces/repositories.js';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);

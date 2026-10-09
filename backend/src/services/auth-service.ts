@@ -1,9 +1,7 @@
-import type { AuthRepository, AuthSession } from '../repositories/supabase-auth-repository.js';
-import type { AppUserRepository } from '../repositories/app-user-repository.js';
+import type { LoginSession } from '../interfaces/auth.js';
+import type { AuthRepository, AppUserRepository } from '../interfaces/repositories.js';
 
-export interface LoginSession extends Omit<AuthSession, 'user'> {
-  user: AuthSession['user'] & { username: string; role: 'admin' | 'customer'; memberTier: 'free' | 'prime' };
-}
+export type { LoginSession } from '../interfaces/auth.js';
 
 export class AuthServiceError extends Error {
   constructor(readonly status: number, readonly code: string, message: string) {

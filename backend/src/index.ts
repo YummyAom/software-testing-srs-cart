@@ -4,7 +4,7 @@ import { createApp } from './app.js';
 import { readConfig } from './config.js';
 
 export { createApp } from './app.js';
-export type { AppConfig } from './app.js';
+export type * from './interfaces/index.js';
 export { readConfig } from './config.js';
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

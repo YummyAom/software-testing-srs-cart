@@ -1,4 +1,4 @@
-type HttpErrorCode = 'AUTH_FORBIDDEN' | 'VALIDATION_ERROR';
+import type { HttpErrorCode } from './interfaces/http.js';
 const descriptions: Record<HttpErrorCode, string> = {
   AUTH_FORBIDDEN: 'Origin or request is not allowed',
   VALIDATION_ERROR: 'รูปแบบหรือช่วงของข้อมูลไม่ถูกต้อง',

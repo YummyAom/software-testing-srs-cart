@@ -3,15 +3,11 @@ import { HttpError, reject } from './errors.js';
 import { registerAuthController } from './controllers/auth-controller.js';
 import { AuthService } from './services/auth-service.js';
 import { SupabaseAuthRepository } from './repositories/supabase-auth-repository.js';
-import type { SupabaseAuthConfig } from './repositories/supabase-auth-repository.js';
+import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
 import { SupabaseAppUserRepository } from './repositories/app-user-repository.js';
 
-export interface AppConfig {
-  appEnv: 'development' | 'test';
-  supabase: SupabaseAuthConfig;
-  uiOrigin: string;
-}
+export type { AppConfig } from './interfaces/config.js';
 
 export function createApp(config: AppConfig) {
   if (process.env.NODE_ENV === 'production' || (config.appEnv !== 'development' && config.appEnv !== 'test')) throw new Error('Local login API requires development/test APP_ENV; production is unsupported');
