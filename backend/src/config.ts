@@ -11,7 +11,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     if (!value) throw new Error(`Configure ${name}`);
     return value;
   }
-  const portText = env.API_PORT ?? '3000';
+  const portText = env.API_PORT ?? '3001';
   if (!/^\d+$/.test(portText)) throw new Error('Invalid API_PORT');
   const port = Number(portText);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid API_PORT');

@@ -34,11 +34,12 @@ type PageScaffoldProps = {
   title: string
   description?: string
   children: ReactNode
-  message?: ReactNode
+  message?: ReactNode | null | false
   messageKind?: MessageKind
   messageCode?: string
   headingAside?: ReactNode
   className?: string
+  titleClassName?: string
 }
 
 export function PageScaffold({
@@ -51,6 +52,7 @@ export function PageScaffold({
   messageCode = "",
   headingAside,
   className = "",
+  titleClassName = "",
 }: PageScaffoldProps) {
   return (
     <section
@@ -58,12 +60,14 @@ export function PageScaffold({
       data-testid={pageTestId}
       aria-labelledby={`${pageTestId}-heading`}
     >
-      <AppMessage kind={messageKind} code={messageCode}>
-        {message}
-      </AppMessage>
+      {message ? (
+        <AppMessage kind={messageKind} code={messageCode}>
+          {message}
+        </AppMessage>
+      ) : null}
       <header className="page-heading">
         <div>
-          <h1 id={`${pageTestId}-heading`}>{title}</h1>
+          <h1 id={`${pageTestId}-heading`} className={titleClassName || undefined}>{title}</h1>
           {description ? <p className="page-description">{description}</p> : null}
         </div>
         {headingAside ? <div className="page-heading-aside">{headingAside}</div> : null}
