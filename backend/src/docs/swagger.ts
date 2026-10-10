@@ -15,12 +15,12 @@ const specification: StaticDocumentSpec = {
   document: {
     openapi: '3.0.3',
     info: {
-      title: 'Supabase Auth API',
+      title: 'Shopping Cart API',
       version: '1.0.0',
-      description: 'Email/password login and current-session logout through Supabase Auth, with username, role and membership loaded from app_users.',
+      description: 'Supabase Auth login, logout and role-aware product listing. Username, role and membership come from app_users.',
     },
     servers: [{ url: '/', description: 'Current API server' }],
-    tags: [{ name: 'Auth', description: 'Authentication' }],
+    tags: [{ name: 'Auth', description: 'Authentication' }, { name: 'Products', description: 'Product catalog' }],
     paths: {
       '/auth/login': {
         post: {
@@ -101,12 +101,45 @@ const specification: StaticDocumentSpec = {
           },
         },
       },
+      '/products': {
+        get: {
+          operationId: 'listProducts',
+          tags: ['Products'],
+          summary: 'List products visible to the current user',
+          description: 'Customer sees on-sale products with stock. Admin sees all products including status.',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Products visible to the current user',
+              content: { 'application/json': {
+                schema: { type: 'object', required: ['data', 'messages'], properties: {
+                  data: { type: 'object', required: ['products'], properties: {
+                    products: { type: 'array', items: { $ref: '#/components/schemas/Product' } },
+                  } },
+                  messages: { type: 'array', items: {} },
+                } },
+              } },
+            },
+            '401': errorResponse('Bearer token is missing, invalid or expired', 'AUTH_REQUIRED', 'Bearer access token is required'),
+            '403': errorResponse('Profile is missing or request Origin is not allowed', 'AUTH_PROFILE_NOT_FOUND', 'Account is not configured in app_users'),
+            '503': errorResponse('Auth, profile or product service is unavailable', 'PRODUCTS_UNAVAILABLE', 'Unable to load products'),
+          },
+        },
+      },
     },
     components: {
       securitySchemes: {
         bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       },
       schemas: {
+        Product: {
+          type: 'object', required: ['productId', 'name', 'price', 'weightGram', 'availableStock'],
+          properties: {
+            productId: { type: 'string' }, name: { type: 'string' }, price: { type: 'integer' },
+            weightGram: { type: 'integer' }, availableStock: { type: 'integer' },
+            status: { type: 'string', enum: ['onSale', 'offSale'], description: 'Returned only for Admin' },
+          },
+        },
         LoginRequest: {
           type: 'object', required: ['email', 'password'], additionalProperties: false,
           properties: {

@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { HttpError, reject } from './errors.js';
 import { registerAuthRoutes } from './modules/auth/auth-routes.js';
+import { registerProductRoutes } from './modules/product/product-routes.js';
 import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
 
@@ -31,5 +32,6 @@ export function createApp(config: AppConfig) {
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
   registerSwagger(app);
   registerAuthRoutes(app, config.supabase, config.uiOrigin);
+  registerProductRoutes(app, config.supabase, config.uiOrigin);
   return app;
 }

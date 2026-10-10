@@ -1,8 +1,8 @@
 # Supabase Auth API
 
-TypeScript + Fastify backend exposing `POST /auth/login`, `POST /auth/logout`, their CORS preflights, and Swagger documentation.
+TypeScript + Fastify backend exposing `POST /auth/login`, `POST /auth/logout`, `GET /products`, their CORS preflights, and Swagger documentation.
 Credentials are verified by Supabase Auth; username, role and membership come from `app_users`.
-No mock sessions, cart, product, order, payment, reset, registration or token-verification middleware is implemented.
+No mock sessions, cart, order, payment, reset or registration is implemented.
 
 ## Structure
 
@@ -42,6 +42,18 @@ import type { LoginRequest, LoginResponse, LoginUser, AuthTokens } from './inter
 
 Add future feature groups under `src/modules/` with their own route, controller and service files.
 Register each group's routes in `app.ts`; keep cross-feature configuration and HTTP helpers at the top level.
+
+## Products
+
+`GET /products` requires `Authorization: Bearer <accessToken>` from the current login API.
+It verifies the token with Supabase Auth and reads the user's role from `app_users`.
+Customers receive only on-sale products with stock and no `status` field. Admins receive
+all products including `status`. Success uses `{ "data": { "products": [...] }, "messages": [] }`.
+Missing tokens return `401 AUTH_REQUIRED`; invalid tokens return `401 AUTH_INVALID_TOKEN`.
+
+Run [sql/enable-product-read.sql](sql/enable-product-read.sql) in Supabase SQL Editor after
+the profile-read SQL. It grants authenticated users read-only product columns and adds
+an RLS policy enforcing the same role rules. This SQL has not been applied remotely.
 
 ## Run
 
