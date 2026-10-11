@@ -69,7 +69,8 @@ create table public.order_lines (
   primary key (order_id,product_id)
 );
 
--- Trigger functions have no SECURITY DEFINER privilege elevation.
+-- Snapshot guard triggers use caller privileges; the deferred workflow check
+-- below uses its owner privileges to validate private tables at commit.
 create function public.protect_order_snapshot() returns trigger language plpgsql as $$
 begin
   if (to_jsonb(new)-'status') is distinct from (to_jsonb(old)-'status') then
@@ -94,7 +95,10 @@ for each row execute function public.protect_order_line();
 
 -- Deferred check sees the complete transaction, not transient checkout/cancel states.
 -- Global scan intentionally acceptable for this small term project; not a scale claim.
-create function public.check_customer_workflow() returns trigger language plpgsql as $$
+-- Deferred events can fire after a SECURITY DEFINER RPC has returned, so this
+-- invariant check needs its own trusted execution context.
+create function public.check_customer_workflow() returns trigger
+language plpgsql security definer set search_path = '' as $$
 begin
   if exists (
     select 1 from public.customer_state s

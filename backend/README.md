@@ -1,8 +1,8 @@
 # Supabase Auth API
 
-TypeScript + Fastify backend exposing `POST /auth/login`, `POST /auth/logout`, `GET /products`, their CORS preflights, and Swagger documentation.
+TypeScript + Fastify backend exposing Supabase Auth, product listing, and customer cart/checkout endpoints with CORS preflights and Swagger documentation.
 Credentials are verified by Supabase Auth; username, role and membership come from `app_users`.
-No mock sessions, cart, order, payment, reset or registration is implemented.
+No mock sessions, payment, reset or registration is implemented. Checkout creates and cancels pending orders; payment completion is not implemented.
 
 ## Structure
 
@@ -21,6 +21,8 @@ src/
 │   └── index.ts                          Type exports
 ├── docs/swagger.ts                       Swagger UI and Login OpenAPI specification
 └── modules/
+    ├── cart/                              Add item controller and Supabase RPC repository
+    ├── product/                           Product list controller, service and repository
     └── auth/
         ├── auth-routes.ts                Register auth URLs, preflights and dependencies
         ├── auth-controller.ts            Validate login request and format HTTP response
@@ -54,6 +56,54 @@ Missing tokens return `401 AUTH_REQUIRED`; invalid tokens return `401 AUTH_INVAL
 Run [sql/enable-product-read.sql](sql/enable-product-read.sql) in Supabase SQL Editor after
 the profile-read SQL. It grants authenticated users read-only product columns and adds
 an RLS policy enforcing the same role rules. This SQL has not been applied remotely.
+
+## Add an item to the cart
+
+The API writes structured JSON logs to the terminal in development. Fastify's
+`reqId` ties the incoming request, cart steps, and final response together.
+For cart mutations, look for `cart_add_failed` or `cart_update_failed`: `reason=timeout` or
+`reason=transport` means Supabase could not be reached, `reason=upstream` includes its HTTP status and
+error code (and `permissionTarget` for recognizable permission failures),
+and `reason=invalid_response` means the RPC returned unexpected
+data. Logs omit request bodies, bearer tokens, cookies, and passwords.
+Logging is silent in `APP_ENV=test`.
+
+Run [sql/enable-cart-add-item.sql](sql/enable-cart-add-item.sql) in Supabase SQL Editor.
+It installs an authenticated Customer-only RPC that validates and writes the cart item
+atomically. The RPC uses the Auth user ID and does not grant direct table access. This SQL
+has not been applied remotely. It requires the `customer_state` and `cart_lines` tables
+from the project schema. It also marks the schema's deferred workflow trigger function
+as `SECURITY DEFINER`; otherwise that trigger can fail at commit with PostgreSQL
+`42501` on `customer_state` after the cart RPC has finished.
+
+Send `POST /cart/items` with `Authorization: Bearer <accessToken>`,
+`Content-Type: application/json`, and `{ "productId": "P1", "quantity": 2 }`.
+Use `quantity`; `qty` is not accepted. Adding an existing product increases its cart
+quantity. A successful response contains the complete cart as `data`, including `stage`,
+`lines`, `lineCount`, and `subtotal`, with `messages: []`. Domain failures return
+`{ "error": { "code": "...", "message": "..." } }` and leave the cart unchanged.
+
+For an existing line, run [sql/enable-cart-update-quantity.sql](sql/enable-cart-update-quantity.sql)
+in Supabase SQL Editor, then send `PUT /cart/items/P1` with `{ "quantity": 3 }`
+and a Customer Bearer token. This replaces the line quantity; it does not add to it.
+The RPC returns `ITEM_NOT_IN_CART` for an absent line and preserves the cart on rejection.
+
+Run [sql/enable-cart-workflow.sql](sql/enable-cart-workflow.sql) in the same Supabase project to install
+`cart_remove_item`, `cart_apply_coupon`, `cart_view`, `cart_press_checkout`, and
+`cart_cancel_checkout`. The script depends on the schema and the two cart SQL files above.
+These RPCs use the Customer's bearer token and keep each mutation in one database
+transaction. The script has not been applied remotely.
+
+- `DELETE /cart/items/P1` removes a line. Removing the last line returns the empty cart
+  with the info message `ตะกร้าว่าง`.
+- `PUT /cart/coupon` accepts `{ "code": "SAVE10" }` and attaches an active coupon,
+  including when the cart is empty. Eligibility is checked at checkout.
+- `GET /cart` reads live cart state and product values.
+- `POST /cart/checkout` accepts `{ "zone": "inCity", "speed": "standard" }` and
+  returns HTTP 201 with a pending order snapshot. It reserves stock and may return a
+  `COUPON_NOT_APPLICABLE` notice when the attached coupon cannot be used.
+- `DELETE /cart/checkout` cancels the current pending order, restores its reserved
+  stock, and returns the cart and cancelled order. It has no order ID path parameter.
 
 ## Run
 

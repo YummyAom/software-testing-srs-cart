@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { HttpError, reject } from './errors.js';
 import { registerAuthRoutes } from './modules/auth/auth-routes.js';
 import { registerProductRoutes } from './modules/product/product-routes.js';
+import { registerCartRoutes } from './modules/cart/cart-routes.js';
 import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
 
@@ -10,7 +11,17 @@ export type { AppConfig } from './interfaces/config.js';
 export function createApp(config: AppConfig) {
   if (process.env.NODE_ENV === 'production' || (config.appEnv !== 'development' && config.appEnv !== 'test')) throw new Error('Local login API requires development/test APP_ENV; production is unsupported');
   if (!config.uiOrigin || new URL(config.uiOrigin).origin !== config.uiOrigin) throw new Error('Configure one exact UI_ORIGIN');
-  const app = Fastify({ exposeHeadRoutes: false, logger: { level: 'silent', redact: ['req.headers.authorization', 'req.body.password'] }, bodyLimit: 16384 });
+  const app = Fastify({
+    exposeHeadRoutes: false,
+    logger: {
+      level: config.appEnv === 'test' ? 'silent' : 'info',
+      redact: ['req.headers.authorization', 'req.headers.cookie', 'req.body.password'],
+      serializers: {
+        req: (request) => ({ method: request.method, path: request.url?.split('?')[0] }),
+      },
+    },
+    bodyLimit: 16384,
+  });
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-content-type-options', 'nosniff').header('cache-control', 'no-store');
     const origin = request.headers.origin;
@@ -33,5 +44,6 @@ export function createApp(config: AppConfig) {
   registerSwagger(app);
   registerAuthRoutes(app, config.supabase, config.uiOrigin);
   registerProductRoutes(app, config.supabase, config.uiOrigin);
+  registerCartRoutes(app, config.supabase, config.uiOrigin);
   return app;
 }
