@@ -1,7 +1,8 @@
-import type { SupabaseAuthConfig } from '../../interfaces/config.js';
-import type { AppUser } from '../../interfaces/user.js';
-import { AuthServiceError } from './auth-service.js';
-import { SupabaseAppUserRepository } from './repositories/app-user-repository.js';
+import type { SupabaseAuthConfig } from '../../../interfaces/config.js';
+import type { AppUser } from '../../../interfaces/user.js';
+import { AuthServiceError } from '../auth-error.js';
+import { PostgresAppUserRepository } from '../repositories/app-user-repository.js';
+import type { Database } from '../../../database.js';
 
 export function bearerToken(header: string | undefined): string {
   const token = /^Bearer ([^\s]+)$/i.exec(header ?? '')?.[1];
@@ -10,7 +11,7 @@ export function bearerToken(header: string | undefined): string {
 }
 
 /** Verify the JWT with Supabase Auth, then read the authoritative role from app_users. */
-export async function authenticatePrincipal(token: string, config: SupabaseAuthConfig): Promise<AppUser> {
+export async function authenticatePrincipal(token: string, config: SupabaseAuthConfig, database: Database): Promise<AppUser> {
   let userId: string;
   try {
     const response = await fetch(new URL('/auth/v1/user', config.url), {
@@ -32,7 +33,7 @@ export async function authenticatePrincipal(token: string, config: SupabaseAuthC
     throw new AuthServiceError(503, 'AUTH_UNAVAILABLE', 'Authentication service is unavailable');
   }
 
-  const profile = await new SupabaseAppUserRepository(config).findByAuthId(userId, token);
+  const profile = await new PostgresAppUserRepository(database).findByAuthId(userId, token);
   if (profile.kind === 'not_found') throw new AuthServiceError(403, 'AUTH_PROFILE_NOT_FOUND', 'Account is not configured in app_users');
   if (profile.kind === 'unavailable') throw new AuthServiceError(503, 'AUTH_PROFILE_UNAVAILABLE', 'Unable to load account profile');
   return profile.user;

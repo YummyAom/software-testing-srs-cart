@@ -1,14 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import type { SupabaseAuthConfig } from '../../interfaces/config.js';
 import { createLoginHandler, createLogoutHandler } from './auth-controller.js';
-import { AuthService } from './auth-service.js';
-import { SupabaseAppUserRepository } from './repositories/app-user-repository.js';
+import { AuthService } from './services/auth-service.js';
+import { PostgresAppUserRepository } from './repositories/app-user-repository.js';
 import { SupabaseAuthRepository } from './repositories/supabase-auth-repository.js';
+import type { Database } from '../../database.js';
 
-export function registerAuthRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string): void {
+export function registerAuthRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string, database: Database): void {
   const service = new AuthService(
     new SupabaseAuthRepository(config),
-    new SupabaseAppUserRepository(config),
+    new PostgresAppUserRepository(database),
   );
   app.post('/auth/login', createLoginHandler(service));
   app.post('/auth/logout', createLogoutHandler(service));

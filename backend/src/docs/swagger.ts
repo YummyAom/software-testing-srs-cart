@@ -28,7 +28,7 @@ const specification: StaticDocumentSpec = {
       description: 'Supabase Auth login, logout, product listing and customer cart workflow. Username, role and membership come from app_users.',
     },
     servers: [{ url: '/', description: 'Current API server' }],
-    tags: [{ name: 'Auth', description: 'Authentication' }, { name: 'Products', description: 'Product catalog' }, { name: 'Cart', description: 'Customer cart' }],
+    tags: [{ name: 'Auth', description: 'Authentication' }, { name: 'Products', description: 'Product catalog' }, { name: 'Cart', description: 'Customer cart' }, { name: 'Orders', description: 'Customer orders' }],
     paths: {
       '/auth/login': {
         post: {
@@ -139,7 +139,7 @@ const specification: StaticDocumentSpec = {
           operationId: 'addCartItem',
           tags: ['Cart'],
           summary: 'Add a product to the current customer cart',
-          description: 'Adds quantity to an existing cart line. Allowed only in cart stage. Requires enable-cart-add-item.sql in Supabase.',
+          description: 'Adds quantity to an existing cart line. Allowed only in cart stage. Cart data is stored in PostgreSQL.',
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { 'application/json': {
             schema: { type: 'object', required: ['productId', 'quantity'], additionalProperties: false,
@@ -156,7 +156,7 @@ const specification: StaticDocumentSpec = {
             '401': errorResponse('Bearer token is missing, invalid or expired', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Only customers may add items', 'AUTH_FORBIDDEN', 'Only customers can add items to a cart'),
             '404': errorResponse('Product does not exist', 'PRODUCT_NOT_FOUND', 'ไม่พบสินค้า'),
-            '503': errorResponse('Cart storage is unavailable or the RPC has not been installed', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
       },
@@ -165,7 +165,7 @@ const specification: StaticDocumentSpec = {
           operationId: 'updateCartQuantity',
           tags: ['Cart'],
           summary: 'Replace the quantity of an item in the current customer cart',
-          description: 'Requires a cart line and cart stage. Replaces the quantity rather than adding to it. Requires enable-cart-update-quantity.sql in Supabase.',
+          description: 'Requires a cart line and cart stage. Replaces the quantity rather than adding to it.',
           security: [{ bearerAuth: [] }],
           parameters: [{ name: 'productId', in: 'path', required: true,
             schema: { type: 'string', minLength: 1 }, example: 'P1' }],
@@ -184,7 +184,7 @@ const specification: StaticDocumentSpec = {
             '401': errorResponse('Bearer token is missing, invalid or expired', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Only customers may update a cart', 'AUTH_FORBIDDEN', 'Only customers can change a cart'),
             '404': errorResponse('Product is not in the cart', 'ITEM_NOT_IN_CART', 'ไม่พบสินค้าในตะกร้า'),
-            '503': errorResponse('Cart storage is unavailable or the RPC has not been installed', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
         delete: {
@@ -197,7 +197,7 @@ const specification: StaticDocumentSpec = {
             '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can access a cart'),
             '404': errorResponse('Item absent from a nonempty cart', 'ITEM_NOT_IN_CART', 'ไม่พบสินค้าในตะกร้า'),
-            '503': errorResponse('Cart RPC unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
       },
@@ -214,7 +214,7 @@ const specification: StaticDocumentSpec = {
             '400': errorResponse('Coupon invalid or cart stage disallows changes', 'COUPON_INVALID', 'คูปองไม่สามารถใช้ได้'),
             '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can access a cart'),
-            '503': errorResponse('Cart RPC unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
       },
@@ -226,7 +226,7 @@ const specification: StaticDocumentSpec = {
             '200': cartResponse('Cart state, items, count and checkoutEnabled'),
             '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can access a cart'),
-            '503': errorResponse('Cart RPC unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
       },
@@ -248,7 +248,7 @@ const specification: StaticDocumentSpec = {
             '400': errorResponse('Invalid delivery, empty cart, unavailable items, excessive weight or wrong stage', 'CART_EMPTY', 'ไม่สามารถชำระเงินได้ ตะกร้าว่าง'),
             '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can access a cart'),
-            '503': errorResponse('Cart RPC unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
           },
         },
         delete: {
@@ -263,7 +263,26 @@ const specification: StaticDocumentSpec = {
             '400': errorResponse('No pending checkout', 'OPERATION_NOT_ALLOWED', 'ดำเนินการได้เฉพาะขณะอยู่ในขั้นตะกร้า'),
             '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
             '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can access a cart'),
-            '503': errorResponse('Cart RPC unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+            '503': errorResponse('Cart storage is unavailable', 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้'),
+          },
+        },
+      },
+      '/orders/{orderId}': {
+        get: {
+          operationId: 'viewOrder', tags: ['Orders'], summary: 'Read an owned order and its item snapshots',
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'orderId', in: 'path', required: true,
+            schema: { type: 'string', format: 'uuid' } }],
+          responses: {
+            '200': { description: 'Owned order with complete item snapshots', content: { 'application/json': {
+              schema: { type: 'object', required: ['data', 'messages'], properties: {
+                data: { $ref: '#/components/schemas/Order' }, messages: { type: 'array', items: {} },
+              } },
+            } } },
+            '401': errorResponse('Bearer token required', 'AUTH_REQUIRED', 'Bearer access token is required'),
+            '403': errorResponse('Customer role required', 'AUTH_FORBIDDEN', 'Only customers can view orders'),
+            '404': errorResponse('Order missing or owned by another customer', 'ORDER_NOT_FOUND', 'ไม่พบออเดอร์'),
+            '503': errorResponse('Order data unavailable', 'ORDER_UNAVAILABLE', 'ไม่สามารถอ่านข้อมูลออเดอร์ได้'),
           },
         },
       },
@@ -308,7 +327,14 @@ const specification: StaticDocumentSpec = {
             shippingFee: { type: 'integer' }, netTotal: { type: 'integer' },
             zone: { type: 'string' }, speed: { type: 'string' },
             couponCode: { type: 'string', nullable: true }, discountSource: { type: 'string' },
-            totalWeightGram: { type: 'integer' }, lines: { type: 'array', items: { type: 'object' } },
+            totalWeightGram: { type: 'integer' }, lines: { type: 'array', items: { $ref: '#/components/schemas/OrderLine' } },
+          },
+        },
+        OrderLine: {
+          type: 'object', required: ['productId', 'name', 'unitPrice', 'quantity', 'weightGram'],
+          properties: {
+            productId: { type: 'string' }, name: { type: 'string' }, unitPrice: { type: 'integer' },
+            quantity: { type: 'integer' }, weightGram: { type: 'integer' },
           },
         },
         LoginRequest: {

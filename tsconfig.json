@@ -3,11 +3,23 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@cart/contracts": ["./packages/contracts/src/index.ts"],
-      "@cart/domain": ["./packages/domain/src/index.ts"],
-      "@cart/api": ["./apps/api/src/index.ts"]
+      "@cart/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@cart/domain": [
+        "./packages/domain/src/index.ts"
+      ],
+      "@cart/api": [
+        "./backend/src/index.ts"
+      ]
     }
   },
-  "include": ["apps/**/*.ts", "packages/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
-  "exclude": ["**/dist", "**/node_modules"]
+  "include": [
+    "backend/**/*.ts",
+    "packages/**/*.ts"
+  ],
+  "exclude": [
+    "**/dist",
+    "**/node_modules"
+  ]
 }

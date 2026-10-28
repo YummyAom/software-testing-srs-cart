@@ -1,9 +1,8 @@
 import type { SupabaseAuthConfig } from '../../../interfaces/config.js';
-import type { AuthRepository, LoginOutcome } from '../../../interfaces/repositories.js';
+import type { AuthRepository, LoginOutcome } from '../auth-types.js';
 
 export type { SupabaseAuthConfig } from '../../../interfaces/config.js';
 export type { AuthSession } from '../../../interfaces/auth.js';
-export type { AuthRepository, LoginOutcome } from '../../../interfaces/repositories.js';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);

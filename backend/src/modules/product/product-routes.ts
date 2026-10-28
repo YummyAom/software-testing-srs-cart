@@ -1,11 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import type { SupabaseAuthConfig } from '../../interfaces/config.js';
 import { createListProductsHandler } from './product-controller.js';
-import { ProductService } from './product-service.js';
-import { SupabaseProductRepository } from './repositories/product-repository.js';
+import { ProductService } from './services/product-service.js';
+import { PostgresProductRepository } from './repositories/product-repository.js';
+import type { Database } from '../../database.js';
 
-export function registerProductRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string): void {
-  app.get('/products', createListProductsHandler(config, new ProductService(new SupabaseProductRepository(config))));
+export function registerProductRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string, database: Database): void {
+  app.get('/products', createListProductsHandler(config, database, new ProductService(new PostgresProductRepository(database))));
   app.options('/products', async (request, reply) => {
     const requestedHeaders = request.headers['access-control-request-headers'];
     if (request.headers.origin !== uiOrigin || request.headers['access-control-request-method'] !== 'GET'

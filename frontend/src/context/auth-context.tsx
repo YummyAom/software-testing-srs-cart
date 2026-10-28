@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loginApi, LoginSession, UserProfile } from '../lib/api-client';
+import { loginApi, UserProfile } from '../lib/api-client';
 
 interface AuthContextType {
   accessToken: string | null;
@@ -36,13 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const session = await loginApi(email, password);
     
-    setAccessToken(session.access_token);
-    setRefreshToken(session.refresh_token);
+    setAccessToken(session.accessToken);
+    setRefreshToken(session.refreshToken);
     setUser(session.user);
     
-    sessionStorage.setItem('access_token', session.access_token);
-    if (session.refresh_token) {
-      sessionStorage.setItem('refresh_token', session.refresh_token);
+    sessionStorage.setItem('access_token', session.accessToken);
+    if (session.refreshToken) {
+      sessionStorage.setItem('refresh_token', session.refreshToken);
     }
     sessionStorage.setItem('user_role', session.user.role);
     sessionStorage.setItem('username', session.user.username);

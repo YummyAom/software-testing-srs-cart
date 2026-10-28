@@ -19,9 +19,15 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
     throw new Error('Configure an HTTPS Supabase project URL');
   }
+  const dbUrl = new URL(required('SUPABASE_DB_URL'));
+  if (!['postgres:', 'postgresql:'].includes(dbUrl.protocol) || !dbUrl.hostname
+    || !dbUrl.username || !dbUrl.password || dbUrl.hash) {
+    throw new Error('Configure a server-only PostgreSQL connection URL');
+  }
   const app: AppConfig = {
     appEnv,
     uiOrigin: env.UI_ORIGIN ?? 'http://localhost:5173',
+    dbUrl: dbUrl.toString(),
     supabase: {
       url: url.origin,
       publishableKey: required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),

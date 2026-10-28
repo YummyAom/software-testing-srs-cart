@@ -1,17 +1,19 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { SupabaseAuthConfig } from '../../interfaces/config.js';
 import { createAddItemHandler, createCartActionHandler, createUpdateQuantityHandler } from './cart-controller.js';
-import { SupabaseCartRepository } from './repositories/cart-repository.js';
+import { PostgresCartRepository } from './repositories/cart-repository.js';
+import { CartService } from './services/cart-service.js';
+import type { Database } from '../../database.js';
 
-export function registerCartRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string): void {
-  const repository = new SupabaseCartRepository(config);
-  app.post('/cart/items', createAddItemHandler(config, repository));
-  app.put('/cart/items/:productId', createUpdateQuantityHandler(config, repository));
-  app.delete('/cart/items/:productId', createCartActionHandler('remove', config, repository));
-  app.put('/cart/coupon', createCartActionHandler('coupon', config, repository));
-  app.get('/cart', createCartActionHandler('view', config, repository));
-  app.post('/cart/checkout', createCartActionHandler('checkout', config, repository));
-  app.delete('/cart/checkout', createCartActionHandler('cancel', config, repository));
+export function registerCartRoutes(app: FastifyInstance, config: SupabaseAuthConfig, uiOrigin: string, database: Database): void {
+  const service = new CartService(new PostgresCartRepository(database));
+  app.post('/cart/items', createAddItemHandler(config, database, service));
+  app.put('/cart/items/:productId', createUpdateQuantityHandler(config, database, service));
+  app.delete('/cart/items/:productId', createCartActionHandler('remove', config, database, service));
+  app.put('/cart/coupon', createCartActionHandler('coupon', config, database, service));
+  app.get('/cart', createCartActionHandler('view', config, database, service));
+  app.post('/cart/checkout', createCartActionHandler('checkout', config, database, service));
+  app.delete('/cart/checkout', createCartActionHandler('cancel', config, database, service));
   const preflight = (methods: string[]) => async (request: FastifyRequest, reply: FastifyReply) => {
     const requestedHeaders = request.headers['access-control-request-headers'];
     if (request.headers.origin !== uiOrigin || !methods.includes(request.headers['access-control-request-method'] ?? '')

@@ -1,13 +1,6 @@
-import type { LoginSession } from '../../interfaces/auth.js';
-import type { AuthRepository, AppUserRepository } from '../../interfaces/repositories.js';
-
-export type { LoginSession } from '../../interfaces/auth.js';
-
-export class AuthServiceError extends Error {
-  constructor(readonly status: number, readonly code: string, message: string) {
-    super(message);
-  }
-}
+import type { LoginSession } from '../../../interfaces/auth.js';
+import type { AuthRepository, AppUserRepository } from '../auth-types.js';
+import { AuthServiceError } from '../auth-error.js';
 
 export class AuthService {
   constructor(private readonly repository: AuthRepository, private readonly users: AppUserRepository) {}

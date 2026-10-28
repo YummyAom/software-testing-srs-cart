@@ -6,7 +6,7 @@ Read baseline SRS (including DC), original API workbook, master spec, decisions/
 
 ## Proposed workspace (DESIGN, paths here are navigation suggestions not immutable decisions)
 
-- apps/api: HTTP interface, auth adapter, workflow orchestration, Supabase pg persistence
+- backend: HTTP interface, auth adapter, workflow orchestration, Supabase pg persistence
 - apps/web: React pages, role/stage router, shared messages, API client
 - packages/domain: exact SRS DC-1 functions and types; no I/O dependencies
 - packages/contracts: generated/shared DTO types consistent with OpenAPI

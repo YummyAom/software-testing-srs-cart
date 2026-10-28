@@ -1,5 +1,5 @@
-import type { AuthSession } from './auth.js';
-import type { AppUser } from './user.js';
+import type { AuthSession } from '../../interfaces/auth.js';
+import type { AppUser } from '../../interfaces/user.js';
 
 export type LoginOutcome =
   | { kind: 'success'; session: AuthSession }

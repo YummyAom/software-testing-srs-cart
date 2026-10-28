@@ -11,11 +11,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   try {
     const config = readConfig();
     const app = createApp(config.app);
-    await app.listen({ port: config.port, host: '127.0.0.1' });
-    console.info(`Local API listening on http://127.0.0.1:${config.port}; Supabase auth`);
+    const address = await app.listen({ port: config.port, host: '127.0.0.1' });
+    console.info(`API: ${address}`);
+    console.info(`Swagger UI: ${new URL('/docs', address).href}`);
     for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { void app.close(); });
-  } catch {
-    console.error('Unable to start local API. Check environment/configuration; production is unsupported.');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (/^Configure [A-Z_]+$/.test(message)) console.error(message);
+    else console.error('Unable to start local API. Check environment/configuration; production is unsupported.');
     process.exitCode = 1;
   }
 }

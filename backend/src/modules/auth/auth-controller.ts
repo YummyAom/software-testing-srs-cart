@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { bodyObject, reject, stringField } from '../../errors.js';
-import { AuthService, AuthServiceError } from './auth-service.js';
+import { AuthServiceError } from './auth-error.js';
+import { AuthService } from './services/auth-service.js';
 import type { LoginRequest, LoginResponse } from '../../interfaces/auth.js';
 
 export function createLoginHandler(service: AuthService) {

@@ -6,6 +6,7 @@ export interface SupabaseAuthConfig {
 export interface AppConfig {
   appEnv: 'development' | 'test';
   supabase: SupabaseAuthConfig;
+  dbUrl?: string;
   uiOrigin: string;
 }
 

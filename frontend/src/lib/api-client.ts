@@ -8,8 +8,10 @@ export interface UserProfile {
 }
 
 export interface LoginSession {
-  access_token: string;
-  refresh_token: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: 'Bearer';
+  expiresIn: number;
   user: UserProfile;
 }
 

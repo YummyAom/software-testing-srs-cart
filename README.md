@@ -1,6 +1,6 @@
 # SRS-CART-002 — Implementation Design Pack
 
-เอกสารออกแบบสำหรับ term project: Multi-User Shopping Cart, Checkout & Store Administration ตาม SRS v1.8 และ API Design เดิม **ยังไม่มี application implementation**
+เอกสารออกแบบสำหรับ term project: Multi-User Shopping Cart, Checkout & Store Administration ตาม SRS v1.8 และ API Design เดิม ปัจจุบัน [backend](backend/README.md) ใช้ Supabase Auth และเชื่อมต่อ PostgreSQL โดยตรงสำหรับสินค้า ตะกร้า checkout และคำสั่งซื้อ ส่วนเอกสารด้านล่างเป็นข้อเสนอสำหรับระบบเต็ม
 
 ## อ่านก่อน implement
 
@@ -19,7 +19,7 @@
 - `SRS` = ข้อกำหนดต้นฉบับ; `API` = workbook; `DESIGN` = ข้อเสนอเพื่อ implement ไม่ใช่ requirement ของผู้สอน; `SOI` = จุดที่ต้องบันทึกและไม่ใช้เป็น SRS test oracle
 - Seam ที่เสนอ: HTTP interface + real test database เป็นหลัก; pure functions และ browser UI เป็น seams เพิ่มที่ DC บังคับ ยังไม่ได้รับคำยืนยันแยกจากผู้ใช้
 - ไม่มีการแก้ไฟล์ต้นฉบับ ไม่มีการเพิ่ม registration, refund, shipping tracking หรือ CRUD สร้างสินค้า/คูปอง
-- ชุดนี้ไม่ได้ผ่าน runtime tests เพราะยังไม่มีแอป; การตรวจเอกสาร/contract ไม่ใช่หลักฐานว่า implementation ถูกต้อง
+- การตรวจเอกสาร/contract ไม่ใช่หลักฐานว่า implementation ถูกต้อง; สถานะและวิธีตรวจสอบ API อยู่ใน [backend runbook](backend/README.md)
 
 ## เทคโนโลยีที่เสนอ (DESIGN)
 

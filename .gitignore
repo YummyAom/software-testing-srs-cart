@@ -41,6 +41,7 @@ out/
 coverage/
 *.lcov
 .nyc_output
+backend/tests/
 
 # Environment variables & secrets
 .env
