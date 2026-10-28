@@ -41,7 +41,7 @@ const specification: StaticDocumentSpec = {
             required: true,
             content: { 'application/json': {
               schema: { $ref: '#/components/schemas/LoginRequest' },
-              example: { email: 'user@email.com', password: 'YOUR_SUPABASE_PASSWORD' },
+              example: { username: 'cus_normal', password: 'YOUR_PASSWORD' },
             } },
           },
           responses: {
@@ -338,9 +338,10 @@ const specification: StaticDocumentSpec = {
           },
         },
         LoginRequest: {
-          type: 'object', required: ['email', 'password'], additionalProperties: false,
+          type: 'object', required: ['password'], additionalProperties: false,
           properties: {
-            email: { type: 'string', format: 'email', maxLength: 254, description: 'Supabase Auth email; surrounding whitespace is trimmed' },
+            username: { type: 'string', minLength: 1, maxLength: 254, description: 'Username or email' },
+            email: { type: 'string', format: 'email', maxLength: 254, description: 'Optional email fallback' },
             password: { type: 'string', format: 'password', minLength: 1, maxLength: 4096, writeOnly: true },
           },
         },

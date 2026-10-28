@@ -29,13 +29,13 @@ export class ApiError extends Error {
 
 const BASE_URL = 'http://localhost:3001';
 
-export async function loginApi(email: string, password: string): Promise<LoginSession> {
+export async function loginApi(username: string, password: string): Promise<LoginSession> {
   const response = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
 
   const json = await response.json();

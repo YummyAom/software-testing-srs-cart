@@ -1,7 +1,8 @@
 import type { AuthUser, LoginUser } from './user.js';
 
 export interface LoginRequest {
-  email: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 

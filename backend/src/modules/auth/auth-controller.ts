@@ -6,20 +6,18 @@ import type { LoginRequest, LoginResponse } from '../../interfaces/auth.js';
 
 export function createLoginHandler(service: AuthService) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const input = bodyObject(request.body, ['email', 'password']);
-    const credentials: LoginRequest = {
-      email: stringField(input, 'email').trim(),
-      password: stringField(input, 'password'),
-    };
-    const { email, password } = credentials;
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      reject('VALIDATION_ERROR', undefined, { fields: ['email'] });
+    const input = bodyObject(request.body, ['username', 'email', 'password'], ['password']);
+    const rawIdentifier = input.username !== undefined ? input.username : input.email;
+    if (typeof rawIdentifier !== 'string' || !rawIdentifier.trim() || rawIdentifier.length > 254) {
+      reject('VALIDATION_ERROR', undefined, { fields: ['username'] });
     }
+    const identifier = rawIdentifier.trim();
+    const password = stringField(input, 'password');
     if (!password.length || password.length > 4096) {
       reject('VALIDATION_ERROR', undefined, { fields: ['password'] });
     }
     try {
-      const session = await service.login(email, password);
+      const session = await service.login(identifier, password);
       const response: LoginResponse = { data: session, messages: [] };
       return response;
     } catch (error) {

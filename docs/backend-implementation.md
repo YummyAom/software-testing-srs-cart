@@ -36,3 +36,12 @@ Profile values come from `app_users`: roles are lowercase, `normal`/Admin `NULL`
 `POST /auth/logout` uses a Bearer access token to revoke only the current Supabase session and returns 204.
 It does not implement refresh or JWT verification middleware for other protected routes. This remains a local development
 API with the existing production startup restriction. Live-project authentication acceptance has not been verified.
+
+## Test Accounts & Credentials
+
+| Role | Username | Email | Password | Supabase UID | Member Tier |
+| --- | --- | --- | --- | --- | --- |
+| **Admin** | `admin` | `admin@email.com` | `Admin@123456` | `851cb40a-3d75-44bd-874a-9951ff57bbca` | `null` (`free`) |
+| **Normal Customer** | `cus_normal` | `cusnormal@gmail.com` | `Normal@123456` | `762e53a6-0e5c-4ddc-8400-e56551826e9e` | `normal` (`free`) |
+| **Prime Customer** | `cus_prime` | `cusprime@gmail.com` | `Prime@123456` | `b740a578-b99b-467c-a67d-d02c687994c2` | `prime` |
+

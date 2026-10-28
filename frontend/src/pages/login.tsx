@@ -35,10 +35,10 @@ export default function LoginPage() {
         code = err.code
         switch (code) {
           case 'AUTH_INVALID_CREDENTIALS': 
-            defaultMessage = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; 
+            defaultMessage = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; 
             break;
           case 'VALIDATION_ERROR': 
-            defaultMessage = "รูปแบบอีเมลหรือรหัสผ่านไม่ถูกต้อง"; 
+            defaultMessage = "รูปแบบชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"; 
             break;
           case 'AUTH_EMAIL_NOT_CONFIRMED': 
             defaultMessage = "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ"; 
@@ -95,7 +95,7 @@ export default function LoginPage() {
           <form className="login-card-form" onSubmit={handleLogin}>
             <div className="login-input-group">
               <label htmlFor="login-username" className="login-field-label">
-                อีเมล
+                ชื่อผู้ใช้ (Username)
               </label>
               <input
                 id="login-username"
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 className="login-text-input"
                 type="text"
                 autoComplete="username"
-                placeholder="อีเมล"
+                placeholder="ชื่อผู้ใช้ (เช่น admin, cus_normal)"
                 value={username}
                 disabled={isLoading}
                 onChange={(e) => setUsername(e.target.value)}

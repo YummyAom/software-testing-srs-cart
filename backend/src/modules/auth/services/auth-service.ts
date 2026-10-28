@@ -11,8 +11,15 @@ export class AuthService {
     if (result === 'unavailable') throw new AuthServiceError(503, 'AUTH_UNAVAILABLE', 'Authentication service is unavailable');
   }
 
-  async login(email: string, password: string): Promise<LoginSession> {
-    const result = await this.repository.signIn(email, password);
+  async login(usernameOrEmail: string, password: string): Promise<LoginSession> {
+    const emailLookup = await this.users.findEmailByIdentifier(usernameOrEmail);
+    if (emailLookup.kind === 'not_found') {
+      throw new AuthServiceError(401, 'AUTH_INVALID_CREDENTIALS', 'Username or password is incorrect');
+    }
+    if (emailLookup.kind === 'unavailable') {
+      throw new AuthServiceError(503, 'AUTH_UNAVAILABLE', 'Authentication service is unavailable');
+    }
+    const result = await this.repository.signIn(emailLookup.email, password);
     switch (result.kind) {
       case 'success': {
         const profile = await this.users.findByAuthId(result.session.user.userId, result.session.accessToken);
@@ -31,7 +38,7 @@ export class AuthService {
         } };
       }
       case 'invalid_credentials':
-        throw new AuthServiceError(401, 'AUTH_INVALID_CREDENTIALS', 'Email or password is incorrect');
+        throw new AuthServiceError(401, 'AUTH_INVALID_CREDENTIALS', 'Username or password is incorrect');
       case 'email_not_confirmed':
         throw new AuthServiceError(403, 'AUTH_EMAIL_NOT_CONFIRMED', 'Please confirm your email before logging in');
       case 'rate_limited':

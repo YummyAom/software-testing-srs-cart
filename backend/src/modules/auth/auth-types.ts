@@ -20,4 +20,5 @@ export type AppUserOutcome =
 
 export interface AppUserRepository {
   findByAuthId(userId: string, accessToken: string): Promise<AppUserOutcome>;
+  findEmailByIdentifier(identifier: string): Promise<{ kind: 'found'; email: string } | { kind: 'not_found' } | { kind: 'unavailable' }>;
 }

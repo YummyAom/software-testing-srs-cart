@@ -5,7 +5,7 @@ interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
   user: UserProfile | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  const login = async (email: string, password: string) => {
-    const session = await loginApi(email, password);
+  const login = async (username: string, password: string) => {
+    const session = await loginApi(username, password);
     
     setAccessToken(session.accessToken);
     setRefreshToken(session.refreshToken);
