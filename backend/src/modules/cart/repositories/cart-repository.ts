@@ -242,4 +242,13 @@ export class PostgresCartRepository implements CartRepository {
       return { cart: await this.cart(client, customerId), order: await this.order(client, orderId) as CancelResult['order'] };
     });
   }
+
+  async continueShopping(customerId: string): Promise<Cart> {
+    return this.write(customerId, async client => {
+      const state = await this.state(client, customerId, true);
+      if (state.stage !== 'success') businessError('OPERATION_NOT_ALLOWED');
+      await client.query("update public.customer_state set stage = 'cart', current_order_id = null where customer_id = $1", [customerId]);
+      return this.cart(client, customerId);
+    });
+  }
 }

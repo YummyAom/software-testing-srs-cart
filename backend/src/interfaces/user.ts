@@ -17,3 +17,14 @@ export interface LoginUser extends AuthUser {
   role: 'admin' | 'customer';
   memberTier: 'free' | 'prime';
 }
+
+/** Authoritative user state according to SRS and OpenAPI. */
+export interface UserState {
+  userId: string;
+  username: string;
+  role: 'Customer' | 'Admin';
+  memberTier: 'normal' | 'prime' | null;
+  stage: 'cart' | 'checkout' | 'success' | null;
+  currentOrderId: string | null;
+}
+

@@ -1,10 +1,61 @@
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { demoOrders } from "@/lib/commerce-demo-data"
+import { useAuth } from "@/src/context/auth-context"
+import { cancelCheckoutApi, payFailApi, paySuccessApi } from "@/src/lib/api-client"
 
 const checkoutOrder = demoOrders[0]
 
 export default function CheckoutPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<{ kind: "error" | "info" | "success"; text: string } | null>(null)
+  const navigate = useNavigate()
+  const { accessToken } = useAuth()
+
+  const handlePaySuccess = async () => {
+    setIsLoading(true)
+    setMessage(null)
+    try {
+      await paySuccessApi(checkoutOrder.id)
+      navigate("/success")
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการชำระเงิน" })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePayFail = async () => {
+    setIsLoading(true)
+    setMessage(null)
+    try {
+      const response = await payFailApi(checkoutOrder.id)
+      const infoText = response.messages?.[0]?.message || "การชำระเงินล้มเหลว กรุณาลองใหม่"
+      setMessage({ kind: "info", text: infoText })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "การชำระเงินล้มเหลว กรุณาลองใหม่" })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancelCheckout = async () => {
+    setIsLoading(true)
+    setMessage(null)
+    try {
+      if (accessToken) {
+        await cancelCheckoutApi(accessToken)
+      }
+      navigate("/cart")
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ" })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <AppShell role="customer" activePage="checkout">
       <PageScaffold
@@ -12,6 +63,22 @@ export default function CheckoutPage() {
         title="ตรวจสอบคำสั่งซื้อ"
         description="ตรวจสอบ snapshot ของรายการและยอดชำระก่อนชำระเงิน"
       >
+        {message && (
+          <div
+            style={{
+              padding: "1rem",
+              marginBottom: "1.5rem",
+              borderRadius: "6px",
+              backgroundColor: message.kind === "error" ? "#fee2e2" : "#fef3c7",
+              color: message.kind === "error" ? "#991b1b" : "#92400e",
+              border: `1px solid ${message.kind === "error" ? "#f87171" : "#fcd34d"}`,
+              fontWeight: 500,
+            }}
+          >
+            {message.text}
+          </div>
+        )}
+
         <div className="checkout-layout">
           <Panel title="รายการสินค้าในคำสั่งซื้อ">
             <div className="order-reference">
@@ -96,32 +163,35 @@ export default function CheckoutPage() {
                   type="button"
                   className="button button-primary button-full"
                   data-testid="gateway-pay-success"
-                  disabled
+                  onClick={handlePaySuccess}
+                  disabled={isLoading}
                 >
-                  จำลองชำระสำเร็จ (test)
+                  {isLoading ? "กำลังประมวลผล..." : "จำลองชำระสำเร็จ (test)"}
                 </button>
                 <button
                   type="button"
                   className="button button-secondary button-full"
                   data-testid="gateway-pay-fail"
-                  disabled
+                  onClick={handlePayFail}
+                  disabled={isLoading}
                 >
-                  จำลองชำระไม่สำเร็จ (test)
+                  {isLoading ? "กำลังประมวลผล..." : "จำลองชำระไม่สำเร็จ (test)"}
                 </button>
                 <button
                   type="button"
                   className="button button-quiet button-full"
                   data-testid="cancel-checkout-button"
-                  disabled
+                  onClick={handleCancelCheckout}
+                  disabled={isLoading}
                 >
                   ยกเลิกคำสั่งซื้อ
                 </button>
               </div>
-              <p className="panel-footnote">ปุ่มชำระเงินและยกเลิกยังไม่เชื่อมต่อ gateway หรือ API</p>
+              <p className="panel-footnote">ปุ่มจำลองการตอบกลับจาก Payment Gateway (สภาพแวดล้อมทดสอบ)</p>
             </Panel>
             <div className="inline-status">
               <OrderStatusPill status={checkoutOrder.status} />
-              <span>สถานะในข้อมูลตัวอย่าง</span>
+              <span>สถานะคำสั่งซื้อ</span>
             </div>
           </aside>
         </div>
