@@ -15,6 +15,10 @@ export class OrderService {
     return this.repository.findOwned(customerId, orderId);
   }
 
+  listOwned(customerId: string) {
+    return this.repository.listOwned(customerId);
+  }
+
   paySuccess(orderId: string) {
     this.assertOrderId(orderId);
     return this.repository.paySuccess(orderId);

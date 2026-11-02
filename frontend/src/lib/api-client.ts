@@ -15,108 +15,294 @@ export interface LoginSession {
   user: UserProfile;
 }
 
+export interface UserState {
+  userId: string;
+  username: string;
+  role: 'Customer' | 'Admin' | 'customer' | 'admin';
+  memberTier: 'normal' | 'prime' | 'free' | null;
+  stage: 'cart' | 'checkout' | 'success' | null;
+  currentOrderId: string | null;
+}
+
+export interface Product {
+  productId: string;
+  name: string;
+  price: number;
+  weightGram: number;
+  availableStock: number;
+  status?: 'onSale' | 'offSale';
+}
+
+export interface CartLine {
+  productId: string;
+  name: string;
+  unitPrice: number;
+  weightGram: number;
+  quantity: number;
+  available: boolean;
+}
+
+export interface Cart {
+  stage: 'cart' | 'checkout' | 'success';
+  currentOrderId: string | null;
+  couponCode: string | null;
+  lineCount: number;
+  checkoutEnabled: boolean;
+  subtotal: number;
+  lines: CartLine[];
+}
+
+export interface OrderLine {
+  productId: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  weightGram?: number;
+  lineTotal?: number;
+}
+
+export interface Order {
+  orderId: string;
+  createdAt: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  subtotal: number;
+  discount: number;
+  shippingFee: number;
+  netTotal: number;
+  zone: 'inCity' | 'upcountry' | 'remote';
+  speed: 'standard' | 'express';
+  couponCode: string | null;
+  discountSource: 'coupon' | 'member' | 'none';
+  totalWeightGram: number;
+  lines: OrderLine[];
+}
+
+export interface OrderSummary {
+  orderId: string;
+  createdAt: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  netTotal: number;
+}
+
+export interface Coupon {
+  code: string;
+  percent: number;
+  minSpend: number;
+  status: 'active' | 'inactive';
+}
+
 export class ApiError extends Error {
   code: string;
   status: number;
+  details?: Record<string, unknown>;
 
-  constructor(message: string, code: string, status: number) {
+  constructor(message: string, code: string, status: number, details?: Record<string, unknown>) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
+    this.details = details;
   }
 }
 
 const BASE_URL = 'http://localhost:3001';
 
-export async function loginApi(username: string, password: string): Promise<LoginSession> {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
-
+async function request<T>(path: string, options: RequestInit = {}): Promise<{ data: T; messages: any[] }> {
+  const url = `${BASE_URL}${path}`;
+  const response = await fetch(url, options);
   const json = await response.json();
 
   if (!response.ok) {
     const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'An unknown error occurred' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
+    throw new ApiError(errorData.message, errorData.code, response.status, errorData.details);
   }
 
-  return json.data as LoginSession;
+  return json;
+}
+
+export async function loginApi(username: string, password: string): Promise<LoginSession> {
+  const res = await request<LoginSession>('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return res.data;
+}
+
+export async function getAuthMeApi(token: string): Promise<UserState> {
+  const res = await request<UserState>('/auth/me', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function getProductsApi(token?: string): Promise<Product[]> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await request<{ products: Product[] }>('/products', { headers });
+  return res.data.products;
+}
+
+export async function getCartApi(token: string): Promise<Cart> {
+  const res = await request<Cart>('/cart', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function addCartItemApi(token: string, productId: string, quantity: number): Promise<Cart> {
+  const res = await request<Cart>('/cart/items', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  return res.data;
+}
+
+export async function updateCartItemQtyApi(token: string, productId: string, quantity: number): Promise<Cart> {
+  const res = await request<Cart>(`/cart/items/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ quantity }),
+  });
+  return res.data;
+}
+
+export async function removeCartItemApi(token: string, productId: string): Promise<Cart> {
+  const res = await request<Cart>(`/cart/items/${productId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function applyCartCouponApi(token: string, code: string): Promise<Cart> {
+  const res = await request<Cart>('/cart/coupon', {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code }),
+  });
+  return res.data;
+}
+
+export async function checkoutCartApi(token: string, zone: string, speed: string): Promise<{ customer: any; order: Order }> {
+  const res = await request<{ customer: any; order: Order }>('/cart/checkout', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ zone, speed }),
+  });
+  return res.data;
+}
+
+export async function cancelCheckoutApi(token: string): Promise<any> {
+  const res = await request<any>('/cart/checkout', {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
 }
 
 export async function paySuccessApi(orderId: string): Promise<any> {
-  const response = await fetch(`${BASE_URL}/orders/${orderId}/pay-success`, {
+  return request(`/orders/${orderId}/pay-success`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ result: 'success' }),
   });
-  const json = await response.json();
-  if (!response.ok) {
-    const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'Payment failed' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
-  }
-  return json;
 }
 
 export async function payFailApi(orderId: string): Promise<any> {
-  const response = await fetch(`${BASE_URL}/orders/${orderId}/pay-fail`, {
+  return request(`/orders/${orderId}/pay-fail`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ result: 'fail' }),
   });
-  const json = await response.json();
-  if (!response.ok) {
-    const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'Payment failed' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
-  }
-  return json;
-}
-
-export async function cancelCheckoutApi(token: string): Promise<any> {
-  const response = await fetch(`${BASE_URL}/cart/checkout`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  const json = await response.json();
-  if (!response.ok) {
-    const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'Cancel checkout failed' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
-  }
-  return json;
 }
 
 export async function continueShoppingApi(token: string): Promise<any> {
-  const response = await fetch(`${BASE_URL}/cart/continue`, {
+  const res = await request<any>('/cart/continue', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function getOrdersApi(token: string): Promise<OrderSummary[]> {
+  const res = await request<{ orders: OrderSummary[] }>('/orders', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data.orders;
+}
+
+export async function getOrderApi(token: string, orderId: string): Promise<Order> {
+  const res = await request<Order>(`/orders/${orderId}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+export async function updateAdminProductApi(
+  token: string,
+  productId: string,
+  patch: { price?: number; stock?: number }
+): Promise<Product> {
+  const res = await request<Product>(`/admin/products/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(patch),
+  });
+  return res.data;
+}
+
+export async function toggleAdminProductStatusApi(
+  token: string,
+  productId: string,
+  status: 'onSale' | 'offSale'
+): Promise<Product> {
+  const res = await request<Product>(`/admin/products/${productId}/status`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ status }),
   });
-  const json = await response.json();
-  if (!response.ok) {
-    const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'Continue shopping failed' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
-  }
-  return json;
+  return res.data;
 }
 
-export async function getAuthMeApi(token: string): Promise<any> {
-  const response = await fetch(`${BASE_URL}/auth/me`, {
-    method: 'GET',
+export async function getAdminCouponsApi(token: string): Promise<Coupon[]> {
+  const res = await request<{ coupons: Coupon[] }>('/admin/coupons', {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return res.data.coupons;
+}
+
+export async function toggleAdminCouponStatusApi(
+  token: string,
+  code: string,
+  status: 'active' | 'inactive'
+): Promise<Coupon[]> {
+  const res = await request<{ coupons: Coupon[] }>(`/admin/coupons/${code}/status`, {
+    method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ status }),
   });
-  const json = await response.json();
-  if (!response.ok) {
-    const errorData = json.error || { code: 'UNKNOWN_ERROR', message: 'Fetch profile failed' };
-    throw new ApiError(errorData.message, errorData.code, response.status);
-  }
-  return json.data;
+  return res.data.coupons;
 }

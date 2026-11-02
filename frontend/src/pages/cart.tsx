@@ -1,58 +1,141 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
-import { cartPreview, formatInteger, formatTHB } from "@/lib/commerce-demo-data"
+import { useAuth } from "@/src/context/auth-context"
+import {
+  applyCartCouponApi,
+  Cart,
+  checkoutCartApi,
+  getCartApi,
+  removeCartItemApi,
+  updateCartItemQtyApi,
+} from "@/src/lib/api-client"
 import { Minus, Package, Plus, Trash2 } from "lucide-react"
 
+function formatTHB(amount: number) {
+  return `${new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(amount)} บาท`
+}
+
+function formatInteger(value: number) {
+  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(value)
+}
+
 export default function CartPage() {
-  const [lines, setLines] = useState(cartPreview.lines)
-  const [couponCode, setCouponCode] = useState(cartPreview.couponCode || "")
+  const { accessToken } = useAuth()
+  const navigate = useNavigate()
+
+  const [cart, setCart] = useState<Cart | null>(null)
+  const [loading, setLoading] = useState(true)
   const [couponInput, setCouponInput] = useState("")
-  const [zone, setZone] = useState(cartPreview.zone || "inCity")
-  const [speed, setSpeed] = useState(cartPreview.speed || "standard")
+  const [zone, setZone] = useState("inCity")
+  const [speed, setSpeed] = useState("standard")
+  const [actionPending, setActionPending] = useState(false)
+  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string; code?: string } | null>(null)
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
-
-  const handleUpdateQty = (productId: string, delta: number) => {
-    setLines((prev) =>
-      prev.map((item) => {
-        if (item.productId === productId) {
-          const nextQty = Math.min(10, Math.max(1, item.quantity + delta))
-          return { ...item, quantity: nextQty }
-        }
-        return item
-      }),
-    )
+  const loadCart = async () => {
+    if (!accessToken) return
+    try {
+      setLoading(true)
+      const data = await getCartApi(accessToken)
+      setCart(data)
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลตะกร้าได้", code: err.code })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDirectQtyChange = (productId: string, val: number) => {
-    if (isNaN(val)) return
-    const bounded = Math.min(10, Math.max(1, val))
-    setLines((prev) =>
-      prev.map((item) => (item.productId === productId ? { ...item, quantity: bounded } : item)),
-    )
+  useEffect(() => {
+    loadCart()
+  }, [accessToken])
+
+  const handleUpdateQty = async (productId: string, nextQty: number) => {
+    if (!accessToken || nextQty < 1 || nextQty > 10) return
+    try {
+      setActionPending(true)
+      setMessage(null)
+      const updated = await updateCartItemQtyApi(accessToken, productId, nextQty)
+      setCart(updated)
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถปรับปรุงจำนวนสินค้าได้", code: err.code })
+    } finally {
+      setActionPending(false)
+    }
   }
+
+  const handleRemove = async (productId: string) => {
+    if (!accessToken) return
+    try {
+      setActionPending(true)
+      setMessage(null)
+      const updated = await removeCartItemApi(accessToken, productId)
+      setCart(updated)
+      if (updated.lines.length === 0) {
+        setMessage({ kind: "info", text: "ตะกร้าว่าง" })
+      }
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถนำสินค้าออกจากตะกร้าได้", code: err.code })
+    } finally {
+      setActionPending(false)
+    }
+  }
+
+  const handleApplyCoupon = async () => {
+    if (!accessToken || !couponInput.trim()) return
+    try {
+      setActionPending(true)
+      setMessage(null)
+      const updated = await applyCartCouponApi(accessToken, couponInput.trim())
+      setCart(updated)
+      setCouponInput("")
+      setMessage({ kind: "info", text: `ใช้คูปอง ${updated.couponCode} สำเร็จ` })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "คูปองไม่ถูกต้อง", code: err.code })
+    } finally {
+      setActionPending(false)
+    }
+  }
+
+  const handleCheckout = async () => {
+    if (!accessToken) return
+    try {
+      setActionPending(true)
+      setMessage(null)
+      const res = await checkoutCartApi(accessToken, zone, speed)
+      navigate("/checkout", { state: { orderId: res.order.orderId } })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถดำเนินการชำระเงินได้", code: err.code })
+    } finally {
+      setActionPending(false)
+    }
+  }
+
+  const lines = cart?.lines || []
+  const subtotal = cart?.subtotal || 0
+  const couponCode = cart?.couponCode || ""
+  const checkoutEnabled = (cart?.checkoutEnabled ?? false) && lines.length > 0
 
   return (
     <AppShell role="customer" activePage="cart">
       <section className="cart-page-frame" data-testid="page-cart" aria-labelledby="page-cart-heading">
-        {/* แถบแจ้งโหมดตัวอย่างสีเหลืองอ่อน (#FFF6DC) */}
-        <div
-          className="demo-scaffold-banner"
-          data-testid="app-message"
-          data-kind="info"
-          data-code=""
-          role="status"
-          aria-live="polite"
-        >
-          <span className="demo-scaffold-mark" aria-hidden="true">
-            i
-          </span>
-          <p>
-            โหมดตัวอย่าง: ข้อมูลในหน้านี้ใช้จัดวาง UI เท่านั้น ยังไม่ได้เชื่อมต่อ api-server และปุ่มที่เปลี่ยนข้อมูลยังปิดใช้งาน
-          </p>
-        </div>
+        {message && (
+          <div
+            className="demo-scaffold-banner"
+            data-testid="app-message"
+            data-kind={message.kind}
+            data-code={message.code || ""}
+            role={message.kind === "error" ? "alert" : "status"}
+            aria-live="polite"
+            style={{
+              backgroundColor: message.kind === "error" ? "#fee2e2" : "#fef3c7",
+              borderColor: message.kind === "error" ? "#f87171" : "#fcd34d",
+              color: message.kind === "error" ? "#991b1b" : "#92400e",
+            }}
+          >
+            <p>{message.text}</p>
+          </div>
+        )}
 
-        {/* ส่วนหัวหน้า: h1 + stepper 3 ขั้น */}
         <header className="cart-header-section">
           <div>
             <h1 id="page-cart-heading" className="cart-main-title">
@@ -85,20 +168,23 @@ export default function CartPage() {
           </nav>
         </header>
 
-        {/* เลย์เอาต์สองคอลัมน์ (grid) */}
         <div className="cart-two-column-layout">
-          {/* คอลัมน์ซ้าย */}
           <div className="cart-left-column">
-            {/* การ์ดรายการสินค้า */}
             <article className="cart-surface-card" aria-labelledby="items-card-heading">
               <div className="card-top-header">
                 <h2 id="items-card-heading" className="card-heading-title">
                   รายการสินค้า
                 </h2>
                 <span className="card-heading-meta" data-value={lines.length}>
-                  {formatInteger(lines.length)} รายการ
+                  {loading ? "กำลังโหลด..." : `${formatInteger(lines.length)} รายการ`}
                 </span>
               </div>
+
+              {lines.length === 0 && !loading && (
+                <div style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>
+                  ยังไม่มีสินค้าในรถเข็น
+                </div>
+              )}
 
               <div className="cart-item-cards-stack">
                 {lines.map((line) => {
@@ -111,12 +197,10 @@ export default function CartPage() {
                       className={`cart-product-row ${isOutOfStock ? "cart-product-row--unavailable" : ""}`}
                       data-testid={`cart-line-${line.productId}`}
                     >
-                      {/* รูปสินค้า 88x88 */}
                       <div className="product-media-thumbnail" aria-hidden="true">
                         <Package size={36} strokeWidth={1.6} />
                       </div>
 
-                      {/* รายละเอียดสินค้า */}
                       <div className="product-details-content">
                         <div className="product-title-line">
                           <h3 className="product-title-text" data-testid="cart-line-name">
@@ -147,23 +231,20 @@ export default function CartPage() {
                           </span>
                         </div>
 
-                        {/* ข้อความเตือนกรณีสินค้าหมด */}
                         {isOutOfStock && (
                           <p className="product-out-of-stock-alert" role="alert">
                             สินค้านี้หมดชั่วคราว กรุณานำออกก่อนดำเนินการชำระเงิน
                           </p>
                         )}
 
-                        {/* แถบตัวปรับจำนวน + ปุ่มนำออก */}
                         <div className="product-bottom-action-bar">
-                          {/* ตัวปรับจำนวน: ปุ่ม − [input จำนวน] + ในกรอบเดียวกัน แต่ละช่อง 44x44 */}
                           <div className="quantity-adjuster-box">
                             <button
                               type="button"
                               className="qty-btn-step"
                               aria-label="ลดจำนวน"
-                              disabled={line.quantity <= 1 || isOutOfStock}
-                              onClick={() => handleUpdateQty(line.productId, -1)}
+                              disabled={line.quantity <= 1 || isOutOfStock || actionPending}
+                              onClick={() => handleUpdateQty(line.productId, line.quantity - 1)}
                             >
                               <Minus size={16} />
                             </button>
@@ -178,28 +259,41 @@ export default function CartPage() {
                               min={1}
                               max={10}
                               value={line.quantity}
-                              disabled={isOutOfStock}
-                              onChange={(e) =>
-                                handleDirectQtyChange(line.productId, parseInt(e.target.value, 10))
-                              }
+                              disabled={isOutOfStock || actionPending}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10)
+                                if (!isNaN(val) && val >= 1 && val <= 10) {
+                                  handleUpdateQty(line.productId, val)
+                                }
+                              }}
                             />
                             <button
                               type="button"
                               className="qty-btn-step"
                               aria-label="เพิ่มจำนวน"
-                              disabled={line.quantity >= 10 || isOutOfStock}
-                              onClick={() => handleUpdateQty(line.productId, 1)}
+                              disabled={line.quantity >= 10 || isOutOfStock || actionPending}
+                              onClick={() => handleUpdateQty(line.productId, line.quantity + 1)}
                             >
                               <Plus size={16} />
                             </button>
                           </div>
 
-                          {/* ปุ่มนำออก */}
+                          <button
+                            type="button"
+                            className="button button-secondary button-small"
+                            data-testid="cart-line-update"
+                            style={{ display: "none" }}
+                            onClick={() => handleUpdateQty(line.productId, line.quantity)}
+                          >
+                            อัปเดต
+                          </button>
+
                           <button
                             type="button"
                             className={`remove-product-btn ${isOutOfStock ? "remove-product-btn--prominent" : ""}`}
                             data-testid="cart-line-remove"
-                            disabled
+                            disabled={actionPending}
+                            onClick={() => handleRemove(line.productId)}
                           >
                             <Trash2 size={16} aria-hidden="true" />
                             <span>นำออก</span>
@@ -212,7 +306,6 @@ export default function CartPage() {
               </div>
             </article>
 
-            {/* การ์ดการจัดส่ง */}
             <article className="cart-surface-card delivery-card" aria-labelledby="delivery-card-heading">
               <h2 id="delivery-card-heading" className="card-heading-title">
                 การจัดส่ง
@@ -254,12 +347,10 @@ export default function CartPage() {
             </article>
           </div>
 
-          {/* คอลัมน์ขวา: การ์ดสรุปคำสั่งซื้อ */}
           <aside className="cart-right-column" aria-label="สรุปคำสั่งซื้อ">
             <article className="cart-surface-card order-summary-card">
               <h2 className="card-heading-title">สรุปคำสั่งซื้อ</h2>
 
-              {/* ส่วนคูปอง */}
               <div className="coupon-card-section">
                 <label htmlFor="coupon-input" className="coupon-input-label">
                   คูปองส่วนลด
@@ -273,13 +364,15 @@ export default function CartPage() {
                     placeholder="กรอกรหัสคูปอง"
                     autoComplete="off"
                     value={couponInput}
+                    disabled={actionPending}
                     onChange={(e) => setCouponInput(e.target.value)}
                   />
                   <button
                     type="button"
                     className="coupon-submit-btn"
                     data-testid="coupon-apply"
-                    disabled
+                    disabled={actionPending || !couponInput.trim()}
+                    onClick={handleApplyCoupon}
                   >
                     ใช้คูปอง
                   </button>
@@ -291,7 +384,6 @@ export default function CartPage() {
 
               <div className="summary-card-divider" />
 
-              {/* รายการยอด */}
               <dl className="summary-amounts-list">
                 <div className="summary-amount-row">
                   <dt>ยอดรวมสินค้า</dt>
@@ -301,38 +393,26 @@ export default function CartPage() {
                     </span>
                   </dd>
                 </div>
-                <div className="summary-amount-row">
-                  <dt>ส่วนลด</dt>
-                  <dd>0 บาท</dd>
-                </div>
-                <div className="summary-amount-row">
-                  <dt>ค่าจัดส่ง</dt>
-                  <dd className="summary-muted-note">คำนวณเมื่อเชื่อมต่อ API</dd>
-                </div>
               </dl>
 
               <div className="summary-card-divider" />
 
-              {/* ยอดสุทธิ */}
               <div className="summary-net-total-row">
-                <span className="net-total-label">ยอดสุทธิ</span>
+                <span className="net-total-label">ยอดสุทธิ (ก่อนค่าจัดส่ง)</span>
                 <span className="net-total-value">
                   {formatTHB(subtotal)}
                 </span>
               </div>
 
-              {/* ปุ่มดำเนินการชำระเงิน */}
               <button
                 type="button"
                 className="checkout-primary-submit-btn"
                 data-testid="checkout-button"
-                disabled
+                disabled={actionPending || !checkoutEnabled}
+                onClick={handleCheckout}
               >
-                ดำเนินการชำระเงิน
+                {actionPending ? "กำลังดำเนินการ..." : "ดำเนินการชำระเงิน"}
               </button>
-              <p className="checkout-helper-footnote">
-                การดำเนินการจะเปิดใช้หลังเชื่อมต่อ API
-              </p>
             </article>
           </aside>
         </div>

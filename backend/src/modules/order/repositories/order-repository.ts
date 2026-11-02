@@ -1,6 +1,6 @@
 import type { Database } from '../../../database.js';
 import { OrderRepositoryError } from '../order-error.js';
-import type { Order, OrderRepository, PaymentResult } from '../order-types.js';
+import type { Order, OrderRepository, OrderSummary, PaymentResult } from '../order-types.js';
 
 export class PostgresOrderRepository implements OrderRepository {
   constructor(private readonly database: Database) {}
@@ -42,6 +42,22 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error) {
       if (error instanceof OrderRepositoryError) throw error;
       throw new OrderRepositoryError(503, 'ORDER_UNAVAILABLE', 'ไม่สามารถอ่านข้อมูลออเดอร์ได้');
+    }
+  }
+
+  async listOwned(customerId: string): Promise<OrderSummary[]> {
+    try {
+      const result = await this.database.query<{
+        order_id: string; created_at: Date; status: Order['status']; net_total: string;
+      }>('select order_id, created_at, status, net_total from public.orders where owner_id = $1 order by created_at desc, sequence desc', [customerId]);
+      return result.rows.map(row => ({
+        orderId: row.order_id,
+        createdAt: row.created_at.toISOString(),
+        status: row.status,
+        netTotal: Number(row.net_total),
+      }));
+    } catch {
+      throw new OrderRepositoryError(503, 'ORDER_UNAVAILABLE', 'ไม่สามารถอ่านข้อมูลรายการคำสั่งซื้อได้');
     }
   }
 

@@ -1,8 +1,49 @@
+import { useEffect, useState } from "react"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, PageScaffold, Panel, StatusPill } from "@/components/commerce/ui"
-import { demoCoupons } from "@/lib/commerce-demo-data"
+import { useAuth } from "@/src/context/auth-context"
+import { Coupon, getAdminCouponsApi, toggleAdminCouponStatusApi } from "@/src/lib/api-client"
 
 export default function AdminCouponsPage() {
+  const { accessToken } = useAuth()
+  const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [loading, setLoading] = useState(true)
+  const [togglingCode, setTogglingCode] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string } | null>(null)
+
+  const loadCoupons = async () => {
+    if (!accessToken) return
+    try {
+      setLoading(true)
+      const data = await getAdminCouponsApi(accessToken)
+      setCoupons(data)
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลคูปองได้" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCoupons()
+  }, [accessToken])
+
+  const handleToggleStatus = async (coupon: Coupon) => {
+    if (!accessToken) return
+    const nextStatus = coupon.status === "active" ? "inactive" : "active"
+    try {
+      setTogglingCode(coupon.code)
+      setMessage(null)
+      const updatedCoupons = await toggleAdminCouponStatusApi(accessToken, coupon.code, nextStatus)
+      setCoupons(updatedCoupons)
+      setMessage({ kind: "info", text: `เปลี่ยนสถานะคูปอง ${coupon.code} เรียบร้อยแล้ว` })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะคูปองได้" })
+    } finally {
+      setTogglingCode(null)
+    }
+  }
+
   return (
     <AppShell role="admin" activePage="admin-coupons">
       <PageScaffold
@@ -10,13 +51,34 @@ export default function AdminCouponsPage() {
         title="จัดการคูปอง"
         description="ตรวจสอบรหัส ส่วนลดขั้นต่ำ และสถานะการใช้งาน"
       >
+        {message && (
+          <div
+            className="demo-scaffold-banner"
+            data-testid="app-message"
+            data-kind={message.kind}
+            data-code=""
+            role={message.kind === "error" ? "alert" : "status"}
+            aria-live="polite"
+            style={{
+              padding: "1rem",
+              marginBottom: "1.5rem",
+              borderRadius: "6px",
+              backgroundColor: message.kind === "error" ? "#fee2e2" : "#f0fdf4",
+              borderColor: message.kind === "error" ? "#f87171" : "#86efac",
+              color: message.kind === "error" ? "#991b1b" : "#166534",
+            }}
+          >
+            <p>{message.text}</p>
+          </div>
+        )}
+
         <Panel
           title="คูปองทั้งหมด"
-          description="หน้านี้แสดงข้อมูลตัวอย่าง การเปิดหรือปิดคูปองยังไม่เชื่อมต่อ API"
+          description={loading ? "กำลังโหลดข้อมูลคูปอง..." : `พบคูปองทั้งหมด ${coupons.length} รายการ`}
         >
           <div className="table-scroll">
             <table className="data-table">
-              <caption className="sr-only">รายการคูปองตัวอย่าง</caption>
+              <caption className="sr-only">รายการคูปอง</caption>
               <thead>
                 <tr>
                   <th scope="col">รหัสคูปอง</th>
@@ -27,7 +89,7 @@ export default function AdminCouponsPage() {
                 </tr>
               </thead>
               <tbody>
-                {demoCoupons.map((coupon) => (
+                {coupons.map((coupon) => (
                   <tr key={coupon.code} data-testid={`admin-coupon-row-${coupon.code}`}>
                     <td data-label="รหัสคูปอง">
                       <strong>{coupon.code}</strong>
@@ -53,7 +115,8 @@ export default function AdminCouponsPage() {
                         type="button"
                         className="button button-secondary button-small"
                         data-testid="admin-coupon-toggle-status"
-                        disabled
+                        disabled={togglingCode === coupon.code}
+                        onClick={() => handleToggleStatus(coupon)}
                       >
                         {coupon.status === "active" ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                       </button>

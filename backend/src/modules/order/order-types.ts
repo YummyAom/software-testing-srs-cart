@@ -24,6 +24,13 @@ export interface Order {
   lines: OrderLine[];
 }
 
+export interface OrderSummary {
+  orderId: string;
+  createdAt: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  netTotal: number;
+}
+
 export interface PaymentResult {
   customer: UserState;
   order: Order;
@@ -31,6 +38,7 @@ export interface PaymentResult {
 
 export interface OrderRepository {
   findOwned(customerId: string, orderId: string): Promise<Order>;
+  listOwned(customerId: string): Promise<OrderSummary[]>;
   paySuccess(orderId: string): Promise<PaymentResult>;
   payFail(orderId: string): Promise<PaymentResult>;
 }

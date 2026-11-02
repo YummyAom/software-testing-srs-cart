@@ -4,6 +4,7 @@ import { registerAuthRoutes } from './modules/auth/auth-routes.js';
 import { registerProductRoutes } from './modules/product/product-routes.js';
 import { registerCartRoutes } from './modules/cart/cart-routes.js';
 import { registerOrderRoutes } from './modules/order/order-routes.js';
+import { registerAdminRoutes } from './modules/admin/admin-routes.js';
 import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
 import { Database } from './database.js';
@@ -49,5 +50,6 @@ export function createApp(config: AppConfig, database = new Database(config.dbUr
   registerProductRoutes(app, config.supabase, config.uiOrigin, database);
   registerCartRoutes(app, config.supabase, config.uiOrigin, database);
   registerOrderRoutes(app, config.supabase, config.uiOrigin, database);
+  registerAdminRoutes(app, config.supabase, config.uiOrigin, database);
   return app;
 }

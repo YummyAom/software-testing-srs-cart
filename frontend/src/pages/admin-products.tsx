@@ -1,9 +1,82 @@
+import { useEffect, useState } from "react"
 import { DraftNumberInput } from "@/components/commerce/draft-number-input"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, PageScaffold, Panel, QuantityValue, StatusPill } from "@/components/commerce/ui"
-import { demoProducts } from "@/lib/commerce-demo-data"
+import { useAuth } from "@/src/context/auth-context"
+import {
+  getProductsApi,
+  Product,
+  toggleAdminProductStatusApi,
+  updateAdminProductApi,
+} from "@/src/lib/api-client"
 
 export default function AdminProductsPage() {
+  const { accessToken } = useAuth()
+  const [products, setProducts] = useState<Product[]>([])
+  const [draftPrices, setDraftPrices] = useState<Record<string, number>>({})
+  const [draftStocks, setDraftStocks] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string } | null>(null)
+
+  const loadProducts = async () => {
+    if (!accessToken) return
+    try {
+      setLoading(true)
+      const data = await getProductsApi(accessToken)
+      setProducts(data)
+      const prices: Record<string, number> = {}
+      const stocks: Record<string, number> = {}
+      for (const p of data) {
+        prices[p.productId] = p.price
+        stocks[p.productId] = p.availableStock
+      }
+      setDraftPrices(prices)
+      setDraftStocks(stocks)
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลสินค้าได้" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadProducts()
+  }, [accessToken])
+
+  const handleSave = async (product: Product) => {
+    if (!accessToken) return
+    const price = draftPrices[product.productId]
+    const stock = draftStocks[product.productId]
+    try {
+      setSavingId(product.productId)
+      setMessage(null)
+      const updated = await updateAdminProductApi(accessToken, product.productId, { price, stock })
+      setProducts((prev) => prev.map((p) => (p.productId === updated.productId ? updated : p)))
+      setMessage({ kind: "info", text: `บันทึกข้อมูลสินค้า ${updated.name} เรียบร้อยแล้ว` })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถบันทึกข้อมูลสินค้าได้" })
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  const handleToggleStatus = async (product: Product) => {
+    if (!accessToken) return
+    const nextStatus = product.status === "onSale" ? "offSale" : "onSale"
+    try {
+      setSavingId(product.productId)
+      setMessage(null)
+      const updated = await toggleAdminProductStatusApi(accessToken, product.productId, nextStatus)
+      setProducts((prev) => prev.map((p) => (p.productId === updated.productId ? updated : p)))
+      setMessage({ kind: "info", text: `เปลี่ยนสถานะสินค้า ${updated.name} เรียบร้อยแล้ว` })
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะสินค้าได้" })
+    } finally {
+      setSavingId(null)
+    }
+  }
+
   return (
     <AppShell role="admin" activePage="admin-products">
       <PageScaffold
@@ -11,13 +84,34 @@ export default function AdminProductsPage() {
         title="จัดการสินค้า"
         description="ดูสินค้า สถานะ ราคา และสต็อก รวมถึงรายการที่หมดหรือปิดจำหน่าย"
       >
+        {message && (
+          <div
+            className="demo-scaffold-banner"
+            data-testid="app-message"
+            data-kind={message.kind}
+            data-code=""
+            role={message.kind === "error" ? "alert" : "status"}
+            aria-live="polite"
+            style={{
+              padding: "1rem",
+              marginBottom: "1.5rem",
+              borderRadius: "6px",
+              backgroundColor: message.kind === "error" ? "#fee2e2" : "#f0fdf4",
+              borderColor: message.kind === "error" ? "#f87171" : "#86efac",
+              color: message.kind === "error" ? "#991b1b" : "#166534",
+            }}
+          >
+            <p>{message.text}</p>
+          </div>
+        )}
+
         <Panel
           title="สินค้าทั้งหมด"
-          description="แก้ไขราคาและสต็อกได้ในช่อง draft แต่การบันทึกและเปลี่ยนสถานะยังปิดไว้"
+          description={loading ? "กำลังโหลดข้อมูลสินค้า..." : `สินค้าทั้งหมด ${products.length} รายการ`}
         >
           <div className="table-scroll">
             <table className="data-table admin-products-table">
-              <caption className="sr-only">รายการสินค้าตัวอย่างสำหรับผู้ดูแลระบบ</caption>
+              <caption className="sr-only">รายการสินค้าสำหรับผู้ดูแลระบบ</caption>
               <thead>
                 <tr>
                   <th scope="col">สินค้า</th>
@@ -30,8 +124,8 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {demoProducts.map((product) => (
-                  <tr key={product.id} data-testid={`admin-product-row-${product.id}`}>
+                {products.map((product) => (
+                  <tr key={product.productId} data-testid={`admin-product-row-${product.productId}`}>
                     <td data-label="สินค้า">
                       <strong data-testid="admin-product-name">{product.name}</strong>
                     </td>
@@ -39,42 +133,48 @@ export default function AdminProductsPage() {
                       <MoneyValue amount={product.price} testId="admin-product-price" />
                     </td>
                     <td data-label="สต็อก">
-                      <QuantityValue value={product.stock} suffix="ชิ้น" testId="admin-product-stock" />
+                      <QuantityValue value={product.availableStock} suffix="ชิ้น" testId="admin-product-stock" />
                     </td>
                     <td data-label="สถานะ">
                       <StatusPill
-                        status={product.status}
+                        status={product.status || "onSale"}
                         label={product.status === "onSale" ? "วางจำหน่าย" : "ปิดจำหน่าย"}
                         tone={product.status === "onSale" ? "positive" : "neutral"}
                         testId="admin-product-status"
                       />
                     </td>
                     <td data-label="แก้ไขราคา">
-                      <label className="sr-only" htmlFor={`admin-price-${product.id}`}>
+                      <label className="sr-only" htmlFor={`admin-price-${product.productId}`}>
                         ราคาใหม่สำหรับ {product.name}
                       </label>
                       <DraftNumberInput
-                        id={`admin-price-${product.id}`}
+                        id={`admin-price-${product.productId}`}
                         data-testid="admin-product-price-input"
                         className="form-control form-control--compact"
-                        initialValue={product.price}
+                        initialValue={draftPrices[product.productId] ?? product.price}
                         min={0}
                         step={1}
                         inputMode="numeric"
+                        onValueChange={(val: number) =>
+                          setDraftPrices((prev) => ({ ...prev, [product.productId]: val }))
+                        }
                       />
                     </td>
                     <td data-label="แก้ไขสต็อก">
-                      <label className="sr-only" htmlFor={`admin-stock-${product.id}`}>
+                      <label className="sr-only" htmlFor={`admin-stock-${product.productId}`}>
                         จำนวนสต็อกใหม่สำหรับ {product.name}
                       </label>
                       <DraftNumberInput
-                        id={`admin-stock-${product.id}`}
+                        id={`admin-stock-${product.productId}`}
                         data-testid="admin-product-stock-input"
                         className="form-control form-control--compact"
-                        initialValue={product.stock}
+                        initialValue={draftStocks[product.productId] ?? product.availableStock}
                         min={0}
                         step={1}
                         inputMode="numeric"
+                        onValueChange={(val: number) =>
+                          setDraftStocks((prev) => ({ ...prev, [product.productId]: val }))
+                        }
                       />
                     </td>
                     <td data-label="จัดการ">
@@ -83,15 +183,17 @@ export default function AdminProductsPage() {
                           type="button"
                           className="button button-primary button-small"
                           data-testid="admin-product-save"
-                          disabled
+                          disabled={savingId === product.productId}
+                          onClick={() => handleSave(product)}
                         >
-                          บันทึก
+                          {savingId === product.productId ? "กำลังบันทึก..." : "บันทึก"}
                         </button>
                         <button
                           type="button"
                           className="button button-secondary button-small"
                           data-testid="admin-product-toggle-status"
-                          disabled
+                          disabled={savingId === product.productId}
+                          onClick={() => handleToggleStatus(product)}
                         >
                           {product.status === "onSale" ? "ปิดขาย" : "เปิดขาย"}
                         </button>

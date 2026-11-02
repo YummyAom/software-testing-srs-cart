@@ -8,9 +8,10 @@ type DraftNumberInputProps = Omit<
   "type" | "value" | "defaultValue" | "onChange"
 > & {
   initialValue: number
+  onValueChange?: (value: number) => void
 }
 
-export function DraftNumberInput({ initialValue, ...inputProps }: DraftNumberInputProps) {
+export function DraftNumberInput({ initialValue, onValueChange, ...inputProps }: DraftNumberInputProps) {
   const [draft, setDraft] = useState(String(initialValue))
   const trimmed = draft.trim()
   const parsedValue = /^-?\d+$/.test(trimmed) ? Number(trimmed) : undefined
@@ -21,7 +22,13 @@ export function DraftNumberInput({ initialValue, ...inputProps }: DraftNumberInp
       {...inputProps}
       type="number"
       value={draft}
-      onChange={(event) => setDraft(event.target.value)}
+      onChange={(event) => {
+        setDraft(event.target.value)
+        const num = Number(event.target.value)
+        if (!isNaN(num) && onValueChange) {
+          onValueChange(num)
+        }
+      }}
       data-value={dataValue}
     />
   )

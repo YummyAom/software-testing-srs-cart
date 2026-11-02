@@ -48,7 +48,7 @@ export const catalogProducts = demoProducts.filter(
   (product) => product.status === "onSale" && product.stock > 0,
 )
 
-export type DemoOrderStatus = "paid" | "pending" | "failed"
+export type DemoOrderStatus = "paid" | "pending" | "failed" | "cancelled"
 
 export type DemoOrderLine = {
   productId: string

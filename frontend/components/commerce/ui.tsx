@@ -152,6 +152,7 @@ const orderStatusPresentation: Record<DemoOrderStatus, { label: string; tone: St
   paid: { label: "ชำระแล้ว", tone: "positive" },
   pending: { label: "รอชำระ", tone: "warning" },
   failed: { label: "ชำระไม่สำเร็จ", tone: "danger" },
+  cancelled: { label: "ยกเลิกแล้ว", tone: "neutral" },
 }
 
 export function OrderStatusPill({ status, testId }: { status: DemoOrderStatus; testId?: string }) {
