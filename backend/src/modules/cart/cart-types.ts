@@ -39,4 +39,5 @@ export interface CartRepository {
   checkout(customerId: string, zone: unknown, speed: unknown,
     calculateQuote: (facts: CheckoutFacts, zone: unknown, speed: unknown) => CheckoutQuote): Promise<CheckoutResult>;
   cancelCheckout(customerId: string): Promise<CancelResult>;
+  continueShopping(customerId: string): Promise<Cart>;
 }

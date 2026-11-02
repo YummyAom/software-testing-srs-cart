@@ -14,8 +14,8 @@
 
 | Method | Path | ผู้ใช้ | Request | Response `data` | สถานะ |
 | --- | --- | --- | --- | --- | --- |
-| `POST` | `/auth/login` | ไม่ต้อง login | **ปัจจุบัน:** `{email,password}`; **สัญญาออกแบบ:** `{username,password}` | ข้อมูล token และ user | เปิดใช้จริง แต่รูปแบบต่างจากสัญญาออกแบบ |
-| `GET` | `/auth/me` | Customer, Admin | Bearer token | `UserState` พร้อม stage และ currentOrderId | ยังไม่พัฒนา |
+| `POST` | `/auth/login` | ไม่ต้อง login | `{username,password}` หรือ `{email,password}` | ข้อมูล token และ user | เปิดใช้จริง |
+| `GET` | `/auth/me` | Customer, Admin | Bearer token | `UserState` พร้อม stage และ currentOrderId | พัฒนาแล้วใน Backend (`feat/backend-payment`) |
 
 **Login ที่ใช้งานได้ตอนนี้:** ใช้ Supabase Auth ด้วยอีเมล/รหัสผ่าน และคืน `accessToken`, `refreshToken`, `tokenType`, `expiresIn` และ `user` (`userId`, `username`, `email`, `role: admin|customer`, `memberTier: free|prime`) ภายใน `data` โดย role/tier อ่านจาก `app_users` ไม่ใช่ข้อมูลที่ client ส่งมา ผู้ใช้ต้องมีแถว `app_users` ที่ `id` ตรงกับ Auth user ID และตั้งค่า SQL สำหรับอ่านโปรไฟล์ตาม [คู่มือ backend](../../backend/README.md) API นี้จำกัด `APP_ENV` เป็น `development` หรือ `test`
 
@@ -51,13 +51,13 @@
 
 Admin ไม่มี endpoint สำหรับสร้างสินค้า/คูปองหรือดูคำสั่งซื้อของลูกค้าในสัญญานี้
 
-## เส้นทางสำหรับระบบทดสอบเท่านั้น (ยังไม่พัฒนา)
+## เส้นทางสำหรับระบบทดสอบเท่านั้น
 
-| Method | Path | Request | Response `data` |
-| --- | --- | --- | --- |
-| `POST` | `/orders/{orderId}/pay-success` | `{result:"success"}` จำลองผลชำระเงินสำเร็จ | `{customer,order}` |
-| `POST` | `/orders/{orderId}/pay-fail` | `{result:"fail"}` จำลองผลชำระเงินล้มเหลว | `{customer,order}` |
-| `POST` | `/test/reset` | `X-Test-Reset-Token` | `{reset:true}` |
+| Method | Path | Request | Response `data` | สถานะ |
+| --- | --- | --- | --- | --- |
+| `POST` | `/orders/{orderId}/pay-success` | `{result:"success"}` จำลองผลชำระเงินสำเร็จ | `{customer,order}` | พัฒนาแล้วใน Backend |
+| `POST` | `/orders/{orderId}/pay-fail` | `{result:"fail"}` จำลองผลชำระเงินล้มเหลว | `{customer,order}` | พัฒนาแล้วใน Backend |
+| `POST` | `/test/reset` | `X-Test-Reset-Token` | `{reset:true}` | ยังไม่พัฒนา |
 
 สามเส้นทางนี้มีเฉพาะ `APP_ENV=test` ตามสัญญาออกแบบ โดย payment simulator ไม่บังคับ Customer token และ reset ต้องใช้ test secret แยกต่างหาก
 

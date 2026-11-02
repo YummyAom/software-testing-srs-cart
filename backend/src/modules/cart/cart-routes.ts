@@ -14,6 +14,7 @@ export function registerCartRoutes(app: FastifyInstance, config: SupabaseAuthCon
   app.get('/cart', createCartActionHandler('view', config, database, service));
   app.post('/cart/checkout', createCartActionHandler('checkout', config, database, service));
   app.delete('/cart/checkout', createCartActionHandler('cancel', config, database, service));
+  app.post('/cart/continue', createCartActionHandler('continue', config, database, service));
   const preflight = (methods: string[]) => async (request: FastifyRequest, reply: FastifyReply) => {
     const requestedHeaders = request.headers['access-control-request-headers'];
     if (request.headers.origin !== uiOrigin || !methods.includes(request.headers['access-control-request-method'] ?? '')
@@ -29,4 +30,5 @@ export function registerCartRoutes(app: FastifyInstance, config: SupabaseAuthCon
   app.options('/cart/coupon', preflight(['PUT']));
   app.options('/cart', preflight(['GET']));
   app.options('/cart/checkout', preflight(['POST', 'DELETE']));
+  app.options('/cart/continue', preflight(['POST']));
 }

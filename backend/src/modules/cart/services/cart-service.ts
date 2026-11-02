@@ -31,4 +31,8 @@ export class CartService {
   cancelCheckout(customerId: string) {
     return this.repository.cancelCheckout(customerId);
   }
+
+  continueShopping(customerId: string) {
+    return this.repository.continueShopping(customerId);
+  }
 }

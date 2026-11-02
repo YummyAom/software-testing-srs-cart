@@ -48,7 +48,7 @@ export function createUpdateQuantityHandler(config: SupabaseAuthConfig, database
   return createItemHandler('update', config, database, service);
 }
 
-type CartAction = 'remove' | 'coupon' | 'view' | 'checkout' | 'cancel';
+type CartAction = 'remove' | 'coupon' | 'view' | 'checkout' | 'cancel' | 'continue';
 
 export function createCartActionHandler(action: CartAction, config: SupabaseAuthConfig, database: Database, service: CartService) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -79,6 +79,9 @@ export function createCartActionHandler(action: CartAction, config: SupabaseAuth
         return reply.code(201).send({ data: { customer: result.customer, order: result.order },
           messages: result.couponRemoved
             ? [{ kind: 'notice', code: 'COUPON_NOT_APPLICABLE', message: 'คูปองไม่สามารถใช้กับคำสั่งซื้อนี้' }] : [] });
+      }
+      if (action === 'continue') {
+        return { data: await service.continueShopping(principal.id), messages: [] };
       }
       const result = await service.cancelCheckout(principal.id);
       return { data: result, messages: [] };

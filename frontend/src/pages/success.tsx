@@ -1,16 +1,38 @@
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { demoOrders } from "@/lib/commerce-demo-data"
+import { useAuth } from "@/src/context/auth-context"
+import { continueShoppingApi } from "@/src/lib/api-client"
 
 const successfulOrder = demoOrders[0]
 
 export default function SuccessPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const { accessToken } = useAuth()
+
+  const handleContinueShopping = async () => {
+    setIsLoading(true)
+    try {
+      if (accessToken) {
+        await continueShoppingApi(accessToken)
+      }
+      navigate("/products")
+    } catch {
+      navigate("/products")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <AppShell role="customer" activePage="success">
       <PageScaffold
         pageTestId="page-success"
         title="คำสั่งซื้อเสร็จสมบูรณ์"
-        description="รายละเอียดด้านล่างเป็น snapshot ตัวอย่างสำหรับหน้าสถานะสำเร็จ"
+        description="รายละเอียดด้านล่างเป็น snapshot สำหรับหน้าสถานะสำเร็จ"
       >
         <Panel title="รายละเอียดคำสั่งซื้อ">
           <div className="success-heading-row">
@@ -70,11 +92,11 @@ export default function SuccessPage() {
               type="button"
               className="button button-primary"
               data-testid="continue-shopping-button"
-              disabled
+              onClick={handleContinueShopping}
+              disabled={isLoading}
             >
-              ซื้อสินค้าต่อ
+              {isLoading ? "กำลังโหลด..." : "ซื้อสินค้าต่อ"}
             </button>
-            <span className="field-hint">การเริ่มรถเข็นใหม่ต้องเชื่อมต่อ API ก่อน</span>
           </div>
         </Panel>
       </PageScaffold>

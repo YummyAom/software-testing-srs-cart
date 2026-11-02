@@ -1,3 +1,5 @@
+import type { UserState } from '../../interfaces/user.js';
+
 export interface OrderLine {
   productId: string;
   name: string;
@@ -22,6 +24,13 @@ export interface Order {
   lines: OrderLine[];
 }
 
+export interface PaymentResult {
+  customer: UserState;
+  order: Order;
+}
+
 export interface OrderRepository {
   findOwned(customerId: string, orderId: string): Promise<Order>;
+  paySuccess(orderId: string): Promise<PaymentResult>;
+  payFail(orderId: string): Promise<PaymentResult>;
 }
