@@ -17,10 +17,10 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    
+
     try {
       await login(username, password)
-      
+
       const role = sessionStorage.getItem("user_role") || "customer"
       if (role === "admin") {
         navigate("/admin/products")
@@ -30,7 +30,7 @@ export default function LoginPage() {
     } catch (err: any) {
       let code = "UNKNOWN_ERROR"
       let defaultMessage = err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ"
-      
+
       if (err instanceof ApiError) {
         code = err.code
         switch (code) {
@@ -54,7 +54,7 @@ export default function LoginPage() {
             break;
         }
       }
-      
+
       setError({ code, message: defaultMessage })
     } finally {
       setIsLoading(false)
@@ -63,18 +63,25 @@ export default function LoginPage() {
 
   return (
     <AppShell role="guest" hideHeader hideFooter>
-      <div className="login-screen-wrapper" data-testid="page-login">
+      <div
+        className="login-screen-wrapper"
+        data-testid="page-login"
+        style={{
+          gap: "28px",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {/* กล่อง Login หลัก */}
         <div className="login-card-container">
-          {/* ไอคอนบนสุด ขยายใหญ่ขึ้นในกรอบสีเดิม */}
           <div className="login-brand-icon-box" aria-hidden="true">
             <ShoppingBag size={28} strokeWidth={2} />
           </div>
 
-          {/* คำว่า Login ตัวหนา ขนาดใหญ่พอดี */}
           <h1 className="login-card-title">Login</h1>
           <p className="login-card-subtitle">ยินดีต้อนรับกลับมา</p>
 
-          {/* กล่องข้อความแจ้งเตือนข้อผิดพลาด (ถ้ามี) */}
           {error && (
             <div
               className="login-error-alert"
@@ -91,7 +98,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* ฟอร์มเข้าสู่ระบบ */}
           <form className="login-card-form" onSubmit={handleLogin}>
             <div className="login-input-group">
               <label htmlFor="login-username" className="login-field-label">
@@ -137,6 +143,232 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+
+        {/* กล่องข้อมูลบัญชีสำหรับทดสอบ แยกออกมาต่างหาก (Standalone Test Accounts Card) */}
+        <aside
+          style={{
+            width: "100%",
+            maxWidth: "360px",
+            background: "var(--app-surface)",
+            border: "1px solid var(--app-border)",
+            borderRadius: "16px",
+            padding: "24px 20px",
+            boxShadow: "0 12px 36px rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            boxSizing: "border-box",
+          }}
+          aria-label="บัญชีสำหรับทดสอบ"
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              borderBottom: "1px solid var(--app-border)",
+              paddingBottom: "12px",
+            }}
+          >
+            <span style={{ fontSize: "1.2rem" }}>🔑</span>
+            <div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  color: "var(--app-text, #ffffff)",
+                }}
+              >
+                บัญชีสำหรับทดสอบ (Seed Accounts)
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--app-text-muted, #94a3b8)",
+                }}
+              >
+                คลิกเพื่อกรอก Username & Password อัตโนมัติ
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              marginTop: "4px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setUsername("cus_normal")
+                setPassword("Normal@123456")
+              }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: "var(--app-surface-hover, #1D2330)",
+                border: "1px solid var(--app-border, #364154)",
+                cursor: "pointer",
+                textAlign: "left",
+                color: "#e2e8f0",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    color: "#38bdf8",
+                  }}
+                >
+                  👤 Normal Customer
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    background: "#334155",
+                    color: "#94a3b8",
+                  }}
+                >
+                  tier: normal
+                </span>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>
+                Username: <code style={{ color: "#f8fafc" }}>cus_normal</code>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                Password: <code style={{ color: "#f8fafc" }}>Normal@123456</code>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUsername("cus_prime")
+                setPassword("Prime@123456")
+              }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: "var(--app-surface-hover, #1D2330)",
+                border: "1px solid var(--app-border, #364154)",
+                cursor: "pointer",
+                textAlign: "left",
+                color: "#e2e8f0",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    color: "#a855f7",
+                  }}
+                >
+                  ⭐ Prime Customer
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    background: "#3b0764",
+                    color: "#d8b4fe",
+                  }}
+                >
+                  tier: prime
+                </span>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>
+                Username: <code style={{ color: "#f8fafc" }}>cus_prime</code>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                Password: <code style={{ color: "#f8fafc" }}>Prime@123456</code>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUsername("admin01")
+                setPassword("Admin@123456")
+              }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: "var(--app-surface-hover, #1D2330)",
+                border: "1px solid var(--app-border, #364154)",
+                cursor: "pointer",
+                textAlign: "left",
+                color: "#e2e8f0",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    color: "#f59e0b",
+                  }}
+                >
+                  🛡️ Admin
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    background: "#78350f",
+                    color: "#fde68a",
+                  }}
+                >
+                  role: admin
+                </span>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>
+                Username: <code style={{ color: "#f8fafc" }}>admin01</code> (หรือ admin)
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                Password: <code style={{ color: "#f8fafc" }}>Admin@123456</code>
+              </div>
+            </button>
+          </div>
+        </aside>
       </div>
     </AppShell>
   )
