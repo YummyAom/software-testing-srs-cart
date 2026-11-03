@@ -4,6 +4,10 @@ import { calculateCheckoutQuote } from './checkout-pricing.js';
 export class CartService {
   constructor(private readonly repository: CartRepository) {}
 
+  assertCartStage(customerId: string) {
+    return this.repository.assertCartStage(customerId);
+  }
+
   addItem(customerId: string, productId: string, quantity: unknown) {
     return this.repository.addItem(customerId, productId, quantity);
   }

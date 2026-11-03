@@ -31,6 +31,8 @@ export interface CancelResult {
 }
 
 export interface CartRepository {
+  /** Rejects with OPERATION_NOT_ALLOWED unless the Customer is in stage `cart` (FR-8.1). */
+  assertCartStage(customerId: string): Promise<void>;
   addItem(customerId: string, productId: string, quantity: unknown): Promise<Cart>;
   updateQuantity(customerId: string, productId: string, quantity: unknown): Promise<Cart>;
   removeItem(customerId: string, productId: string): Promise<Cart>;

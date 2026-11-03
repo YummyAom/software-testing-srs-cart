@@ -86,7 +86,12 @@ export function registerAdminRoutes(app: FastifyInstance, config: SupabaseAuthCo
       const { productId } = request.params as { productId: string };
       const body = (request.body && typeof request.body === 'object') ? request.body as Record<string, unknown> : {};
       if (body.status !== 'onSale' && body.status !== 'offSale') {
-        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status' } });
+        // FR-9.3.1 / SOI-02: a missing product is reported before an invalid status.
+        const exists = await database.query('select product_id from public.products where product_id = $1', [productId]);
+        if (exists.rowCount === 0) {
+          return reply.code(404).send({ error: { code: 'PRODUCT_NOT_FOUND', message: 'ไม่พบสินค้า' } });
+        }
+        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status', details: { fields: ['status'] } } });
       }
 
       const updated = await database.query<{
@@ -151,7 +156,12 @@ export function registerAdminRoutes(app: FastifyInstance, config: SupabaseAuthCo
       const { code } = request.params as { code: string };
       const body = (request.body && typeof request.body === 'object') ? request.body as Record<string, unknown> : {};
       if (body.status !== 'active' && body.status !== 'inactive') {
-        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status' } });
+        // FR-10.1.1 / SOI-02: a missing coupon is reported before an invalid status.
+        const exists = await database.query('select code from public.coupons where code = $1', [code]);
+        if (exists.rowCount === 0) {
+          return reply.code(404).send({ error: { code: 'COUPON_NOT_FOUND', message: 'ไม่พบคูปอง' } });
+        }
+        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status', details: { fields: ['status'] } } });
       }
 
       const updated = await database.query('update public.coupons set status = $1 where code = $2 returning code', [body.status, code]);
