@@ -17,7 +17,7 @@ Workflow stage guards: /cart only cart; /checkout only checkout; /success only s
 | /login / page-login | username,password labeled inputs, submit; show auth error | idle/submitting/error; no registration/reset links |
 | /products / page-products | available products, name/price/weight/stock, qty input and add action per row | empty catalog; loading; add disabled outside cart, quantity drafts still possible; POST add returns Cart |
 | /cart / page-cart | live cart rows, edit quantity/update/remove, subtotal, coupon code/input/apply, zone/speed, checkout | empty with disabled checkout; unavailable row kept/removable; coupon attach even empty; checkout enabled iff lineCount>=1 and cart stage |
-| /checkout / page-checkout | pending snapshot lines/orderId/totals/zone/speed/coupon; cancel; test-only pay-success/pay-fail | gateway fail info stays checkout; coupon notice survives navigation; no editing snapshot |
+| /checkout / page-checkout | pending snapshot lines/orderId/totals/zone/speed/coupon; cancel; development/test-only pay-success/pay-fail | gateway fail info stays checkout; coupon notice survives navigation; no editing snapshot |
 | /success / page-success | paid snapshot orderId/lines/all totals; continue shopping | button -> server continue -> cart |
 | /orders / page-orders | own orders newest first, status/total/view links | no orders empty state; all stages readable |
 | /orders/{orderId} / page-order-detail | owned immutable order details, line names/prices/qty and totals/status | not found and non-owner identical error; no cancel/refund paid orders |
@@ -40,7 +40,7 @@ All controls native button/a/input/select, labels tied by for/id, unique accessi
 | page-cart | cart-line-{productId}: cart-line-name,cart-line-unit-price,cart-line-qty,cart-line-availability,cart-line-qty-input,cart-line-update,cart-line-remove | price/qty data-value; availability data-available=true/false |
 | page-cart | cart-subtotal,cart-coupon-code,coupon-input,coupon-apply,zone-select,speed-select,checkout-button | subtotal data-value; checkout native disabled |
 | page-checkout | checkout-order-id,checkout-subtotal,checkout-discount,checkout-shipping,checkout-total,cancel-checkout-button | money data-value |
-| page-checkout (test only) | gateway-pay-success,gateway-pay-fail | buttons call current order's OP-10/11 |
+| page-checkout (development/test only) | gateway-pay-success,gateway-pay-fail | buttons call current order's OP-10/11 |
 | page-success | success-order-id,success-line-{productId},success-subtotal,success-discount,success-shipping,success-total,continue-shopping-button | money data-value; each line visible name/qty/price |
 | page-orders | order-row-{orderId}: order-status,order-total,order-view | status data-status, total data-value |
 | page-order-detail | order-detail-id,order-detail-status,order-line-{productId}: order-line-unit-price,order-line-qty; order-detail-subtotal,order-detail-discount,order-detail-shipping,order-detail-total | status data-status; amounts/qty data-value |

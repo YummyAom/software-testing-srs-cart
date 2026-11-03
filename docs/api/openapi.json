@@ -811,7 +811,7 @@
         "operationId": "OP-10",
         "summary": "OP-10",
         "security": [],
-        "description": "Test environment only. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "description": "Development and test environments only (gateway simulator). Domain validation ordering and no-write rejection rules are defined in companion specifications.",
         "responses": {
           "200": {
             "description": "Success",
@@ -912,7 +912,7 @@
         "operationId": "OP-11",
         "summary": "OP-11",
         "security": [],
-        "description": "Test environment only. Domain validation ordering and no-write rejection rules are defined in companion specifications.",
+        "description": "Development and test environments only (gateway simulator). Domain validation ordering and no-write rejection rules are defined in companion specifications.",
         "responses": {
           "200": {
             "description": "Success",

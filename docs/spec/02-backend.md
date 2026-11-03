@@ -34,7 +34,7 @@ Interface ภายนอกหลักคือ HTTP ใน API contract. Doma
 - ไม่รับ customerId/role/memberTier/stock totals จาก browser. Orders WHERE owner_id=principal.id ก่อนส่ง output. Admin ไม่มีสิทธิ์ list/view orders
 - GET /auth/me ใช้ verifier เดียวกันและคืน persisted stage/currentOrderId; frontend contract เดิมไม่เปลี่ยน
 - Inject clock และ signing configuration ใน auth module สำหรับ deterministic token-design tests; production clock อ่านเวลาจริง. ห้ามเพิ่ม time-travel/token-issuance HTTP endpoint เพื่อทดสอบ; service tests login จริง ไม่ mock authenticated principal
-- OP-10/11 ไม่บังคับ auth ตาม SRS test gateway scope; expose เฉพาะ isolated APP_ENV=test demo. นอก test ตอบ 404 route absent; real gateway integration อยู่นอก scope
+- OP-10/11 ไม่บังคับ auth ตาม SRS test gateway scope; expose เฉพาะ APP_ENV=development|test (SRS §1.3/DC-3.3 ไม่ได้ห้ามนอก test; ดู D-03). env อื่นตอบ 404 route absent; real gateway integration อยู่นอก scope
 
 ## State model
 
