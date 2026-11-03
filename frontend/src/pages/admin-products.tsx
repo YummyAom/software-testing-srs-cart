@@ -4,11 +4,16 @@ import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, PageScaffold, Panel, QuantityValue, StatusPill } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
 import {
+  ApiError,
   getProductsApi,
   Product,
   toggleAdminProductStatusApi,
   updateAdminProductApi,
 } from "@/src/lib/api-client"
+
+type PageMessage = { kind: "error" | "notice" | "info"; text: string; code: string }
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
 
 export default function AdminProductsPage() {
   const { accessToken } = useAuth()
@@ -17,7 +22,7 @@ export default function AdminProductsPage() {
   const [draftStocks, setDraftStocks] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
-  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string } | null>(null)
+  const [message, setMessage] = useState<PageMessage | null>(null)
 
   const loadProducts = async () => {
     if (!accessToken) return
@@ -34,7 +39,7 @@ export default function AdminProductsPage() {
       setDraftPrices(prices)
       setDraftStocks(stocks)
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลสินค้าได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลสินค้าได้", code: errorCode(err) })
     } finally {
       setLoading(false)
     }
@@ -53,9 +58,8 @@ export default function AdminProductsPage() {
       setMessage(null)
       const updated = await updateAdminProductApi(accessToken, product.productId, { price, stock })
       setProducts((prev) => prev.map((p) => (p.productId === updated.productId ? updated : p)))
-      setMessage({ kind: "info", text: `บันทึกข้อมูลสินค้า ${updated.name} เรียบร้อยแล้ว` })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถบันทึกข้อมูลสินค้าได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถบันทึกข้อมูลสินค้าได้", code: errorCode(err) })
     } finally {
       setSavingId(null)
     }
@@ -69,9 +73,8 @@ export default function AdminProductsPage() {
       setMessage(null)
       const updated = await toggleAdminProductStatusApi(accessToken, product.productId, nextStatus)
       setProducts((prev) => prev.map((p) => (p.productId === updated.productId ? updated : p)))
-      setMessage({ kind: "info", text: `เปลี่ยนสถานะสินค้า ${updated.name} เรียบร้อยแล้ว` })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะสินค้าได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะสินค้าได้", code: errorCode(err) })
     } finally {
       setSavingId(null)
     }
@@ -89,7 +92,7 @@ export default function AdminProductsPage() {
             className="demo-scaffold-banner"
             data-testid="app-message"
             data-kind={message.kind}
-            data-code=""
+            data-code={message.code}
             role={message.kind === "error" ? "alert" : "status"}
             aria-live="polite"
             style={{

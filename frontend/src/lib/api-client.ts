@@ -203,7 +203,14 @@ export async function applyCartCouponApi(token: string, code: string): Promise<C
   return res.data;
 }
 
-export async function checkoutCartApi(token: string, zone: string, speed: string): Promise<{ customer: any; order: Order }> {
+/** A response message from api-server, e.g. the COUPON_NOT_APPLICABLE notice (FR-4.3.2). */
+export interface ApiMessage {
+  kind: 'error' | 'notice' | 'info';
+  code: string;
+  message: string;
+}
+
+export async function checkoutCartApi(token: string, zone: string, speed: string): Promise<{ customer: any; order: Order; messages: ApiMessage[] }> {
   const res = await request<{ customer: any; order: Order }>('/cart/checkout', {
     method: 'POST',
     headers: {
@@ -212,7 +219,7 @@ export async function checkoutCartApi(token: string, zone: string, speed: string
     },
     body: JSON.stringify({ zone, speed }),
   });
-  return res.data;
+  return { ...res.data, messages: res.messages ?? [] };
 }
 
 export async function cancelCheckoutApi(token: string): Promise<any> {

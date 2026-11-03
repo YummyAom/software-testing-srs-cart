@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react"
+import { Navigate } from "react-router-dom"
 import { DraftNumberInput } from "@/components/commerce/draft-number-input"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
-import { addCartItemApi, getProductsApi, Product } from "@/src/lib/api-client"
+import { addCartItemApi, ApiError, getProductsApi, Product } from "@/src/lib/api-client"
+
+type PageMessage = { kind: "error" | "notice" | "info"; text: string; code: string }
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
 
 export default function ProductsPage() {
   const { accessToken } = useAuth()
@@ -11,7 +16,7 @@ export default function ProductsPage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [addingId, setAddingId] = useState<string | null>(null)
-  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string } | null>(null)
+  const [message, setMessage] = useState<PageMessage | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -25,7 +30,7 @@ export default function ProductsPage() {
         }
         setQuantities(initialQtys)
       } catch (err: any) {
-        setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดรายการสินค้าได้" })
+        setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดรายการสินค้าได้", code: errorCode(err) })
       } finally {
         setLoading(false)
       }
@@ -38,22 +43,21 @@ export default function ProductsPage() {
   }
 
   const handleAddToCart = async (product: Product) => {
-    if (!accessToken) {
-      setMessage({ kind: "error", text: "กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงในตะกร้า" })
-      return
-    }
-    const qty = quantities[product.productId] || 1
+    if (!accessToken) return
+    // Send exactly what was entered (0, 11, 1.5 …) so api-server applies FR-2.1/FR-2.6.
+    const qty = quantities[product.productId] ?? 1
     try {
       setAddingId(product.productId)
       setMessage(null)
       await addCartItemApi(accessToken, product.productId, qty)
-      setMessage({ kind: "info", text: `เพิ่ม ${product.name} จำนวน ${qty} ชิ้น ในตะกร้าแล้ว` })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถเพิ่มสินค้าลงในตะกร้าได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถเพิ่มสินค้าลงในตะกร้าได้", code: errorCode(err) })
     } finally {
       setAddingId(null)
     }
   }
+
+  if (!accessToken) return <Navigate to="/login" replace />
 
   return (
     <AppShell role="customer" activePage="products">
@@ -67,7 +71,7 @@ export default function ProductsPage() {
             className="demo-scaffold-banner"
             data-testid="app-message"
             data-kind={message.kind}
-            data-code=""
+            data-code={message.code}
             role={message.kind === "error" ? "alert" : "status"}
             aria-live="polite"
             style={{

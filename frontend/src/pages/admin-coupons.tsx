@@ -2,14 +2,18 @@ import { useEffect, useState } from "react"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, PageScaffold, Panel, StatusPill } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
-import { Coupon, getAdminCouponsApi, toggleAdminCouponStatusApi } from "@/src/lib/api-client"
+import { ApiError, Coupon, getAdminCouponsApi, toggleAdminCouponStatusApi } from "@/src/lib/api-client"
+
+type PageMessage = { kind: "error" | "notice" | "info"; text: string; code: string }
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
 
 export default function AdminCouponsPage() {
   const { accessToken } = useAuth()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [togglingCode, setTogglingCode] = useState<string | null>(null)
-  const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string } | null>(null)
+  const [message, setMessage] = useState<PageMessage | null>(null)
 
   const loadCoupons = async () => {
     if (!accessToken) return
@@ -18,7 +22,7 @@ export default function AdminCouponsPage() {
       const data = await getAdminCouponsApi(accessToken)
       setCoupons(data)
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลคูปองได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลคูปองได้", code: errorCode(err) })
     } finally {
       setLoading(false)
     }
@@ -36,9 +40,8 @@ export default function AdminCouponsPage() {
       setMessage(null)
       const updatedCoupons = await toggleAdminCouponStatusApi(accessToken, coupon.code, nextStatus)
       setCoupons(updatedCoupons)
-      setMessage({ kind: "info", text: `เปลี่ยนสถานะคูปอง ${coupon.code} เรียบร้อยแล้ว` })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะคูปองได้" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถเปลี่ยนสถานะคูปองได้", code: errorCode(err) })
     } finally {
       setTogglingCode(null)
     }
@@ -56,7 +59,7 @@ export default function AdminCouponsPage() {
             className="demo-scaffold-banner"
             data-testid="app-message"
             data-kind={message.kind}
-            data-code=""
+            data-code={message.code}
             role={message.kind === "error" ? "alert" : "status"}
             aria-live="polite"
             style={{

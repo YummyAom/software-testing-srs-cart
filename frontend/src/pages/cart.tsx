@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { DraftNumberInput } from "@/components/commerce/draft-number-input"
 import { AppShell } from "@/components/commerce/shell"
 import { useAuth } from "@/src/context/auth-context"
 import {
@@ -30,6 +31,7 @@ export default function CartPage() {
   const [zone, setZone] = useState("inCity")
   const [speed, setSpeed] = useState("standard")
   const [actionPending, setActionPending] = useState(false)
+  const [draftQtys, setDraftQtys] = useState<Record<string, number>>({})
   const [message, setMessage] = useState<{ kind: "error" | "notice" | "info"; text: string; code?: string } | null>(null)
 
   const loadCart = async () => {
@@ -49,13 +51,15 @@ export default function CartPage() {
     loadCart()
   }, [accessToken])
 
+  // No client-side range check: api-server answers FR-2.5/FR-2.6 (VALIDATION_ERROR, QTY_OUT_OF_RANGE, …).
   const handleUpdateQty = async (productId: string, nextQty: number) => {
-    if (!accessToken || nextQty < 1 || nextQty > 10) return
+    if (!accessToken) return
     try {
       setActionPending(true)
       setMessage(null)
       const updated = await updateCartItemQtyApi(accessToken, productId, nextQty)
       setCart(updated)
+      setDraftQtys(({ [productId]: _sent, ...rest }) => rest)
     } catch (err: any) {
       setMessage({ kind: "error", text: err.message || "ไม่สามารถปรับปรุงจำนวนสินค้าได้", code: err.code })
     } finally {
@@ -88,7 +92,6 @@ export default function CartPage() {
       const updated = await applyCartCouponApi(accessToken, couponInput.trim())
       setCart(updated)
       setCouponInput("")
-      setMessage({ kind: "info", text: `ใช้คูปอง ${updated.couponCode} สำเร็จ` })
     } catch (err: any) {
       setMessage({ kind: "error", text: err.message || "คูปองไม่ถูกต้อง", code: err.code })
     } finally {
@@ -102,7 +105,9 @@ export default function CartPage() {
       setActionPending(true)
       setMessage(null)
       const res = await checkoutCartApi(accessToken, zone, speed)
-      navigate("/checkout", { state: { orderId: res.order.orderId } })
+      // FR-4.3.2: carry the COUPON_NOT_APPLICABLE notice to the checkout page.
+      const notice = res.messages.find((m) => m.kind === "notice") ?? null
+      navigate("/checkout", { state: { orderId: res.order.orderId, notice } })
     } catch (err: any) {
       setMessage({ kind: "error", text: err.message || "ไม่สามารถดำเนินการชำระเงินได้", code: err.code })
     } finally {
@@ -251,21 +256,19 @@ export default function CartPage() {
                             <span className="sr-only" data-testid="cart-line-qty" data-value={line.quantity}>
                               {line.quantity}
                             </span>
-                            <input
-                              type="number"
+                            <label className="sr-only" htmlFor={`cart-qty-${line.productId}`}>
+                              จำนวน {line.name}
+                            </label>
+                            <DraftNumberInput
+                              key={`${line.productId}-${line.quantity}`}
+                              id={`cart-qty-${line.productId}`}
                               className="qty-direct-input"
                               data-testid="cart-line-qty-input"
-                              aria-label={`จำนวน ${line.name}`}
-                              min={1}
-                              max={10}
-                              value={line.quantity}
+                              initialValue={line.quantity}
                               disabled={isOutOfStock || actionPending}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value, 10)
-                                if (!isNaN(val) && val >= 1 && val <= 10) {
-                                  handleUpdateQty(line.productId, val)
-                                }
-                              }}
+                              onValueChange={(val: number) =>
+                                setDraftQtys((prev) => ({ ...prev, [line.productId]: val }))
+                              }
                             />
                             <button
                               type="button"
@@ -282,8 +285,8 @@ export default function CartPage() {
                             type="button"
                             className="button button-secondary button-small"
                             data-testid="cart-line-update"
-                            style={{ display: "none" }}
-                            onClick={() => handleUpdateQty(line.productId, line.quantity)}
+                            disabled={actionPending}
+                            onClick={() => handleUpdateQty(line.productId, draftQtys[line.productId] ?? line.quantity)}
                           >
                             อัปเดต
                           </button>
