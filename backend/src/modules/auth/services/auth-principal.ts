@@ -20,7 +20,7 @@ export async function authenticatePrincipal(token: string, config: SupabaseAuthC
       redirect: 'error',
     });
     if (response.status === 401 || response.status === 403) {
-      throw new AuthServiceError(401, 'AUTH_INVALID_TOKEN', 'Invalid or expired access token');
+      throw new AuthServiceError(401, 'AUTH_REQUIRED', 'Invalid or expired access token');
     }
     if (!response.ok) throw new Error('Auth provider unavailable');
     const body: unknown = await response.json();
