@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { validateProductUpdate } from '@cart/domain';
 import type { SupabaseAuthConfig } from '../../interfaces/config.js';
 import type { Database } from '../../database.js';
 import { authenticatePrincipal, bearerToken } from '../auth/services/auth-principal.js';
@@ -21,23 +22,22 @@ export function registerAdminRoutes(app: FastifyInstance, config: SupabaseAuthCo
       await requireAdmin(request);
       const { productId } = request.params as { productId: string };
       const body = (request.body && typeof request.body === 'object') ? request.body as Record<string, unknown> : {};
-      
-      const invalidFields: string[] = [];
-      if ('price' in body) {
-        const p = body.price;
-        if (typeof p !== 'number' || !Number.isInteger(p) || p < 1 || p > 50000) {
-          invalidFields.push('price');
-        }
+
+      // FR-9.1.1 step 1: PRODUCT_NOT_FOUND before field validation.
+      const existing = await database.query<{
+        product_id: string; name: string; price: number; weight_gram: number;
+        available_stock: string; status: 'onSale' | 'offSale';
+      }>('select product_id, name, price, weight_gram, available_stock, status from public.products where product_id = $1', [productId]);
+      const current = existing.rows[0];
+      if (!current) {
+        return reply.code(404).send({ error: { code: 'PRODUCT_NOT_FOUND', message: 'ไม่พบสินค้า' } });
       }
-      if ('stock' in body) {
-        const s = body.stock;
-        if (typeof s !== 'number' || !Number.isInteger(s) || s < 0) {
-          invalidFields.push('stock');
-        }
-      }
-      if (!('price' in body) && !('stock' in body)) {
-        invalidFields.push('price', 'stock');
-      }
+
+      // FR-9.1.1 step 2 via DC-1 pure function.
+      const invalidFields = validateProductUpdate({
+        ...('price' in body ? { price: body.price } : {}),
+        ...('stock' in body ? { stock: body.stock } : {}),
+      });
       if (invalidFields.length > 0) {
         return reply.code(400).send({
           error: {
@@ -48,15 +48,6 @@ export function registerAdminRoutes(app: FastifyInstance, config: SupabaseAuthCo
         });
       }
 
-      const existing = await database.query<{
-        product_id: string; name: string; price: number; weight_gram: number;
-        available_stock: string; status: 'onSale' | 'offSale';
-      }>('select product_id, name, price, weight_gram, available_stock, status from public.products where product_id = $1', [productId]);
-      const current = existing.rows[0];
-      if (!current) {
-        return reply.code(404).send({ error: { code: 'PRODUCT_NOT_FOUND', message: 'ไม่พบสินค้า' } });
-      }
-
       const price = ('price' in body) ? (body.price as number) : current.price;
       const stock = ('stock' in body) ? (body.stock as number) : Number(current.available_stock);
 
@@ -65,6 +56,9 @@ export function registerAdminRoutes(app: FastifyInstance, config: SupabaseAuthCo
         available_stock: string; status: 'onSale' | 'offSale';
       }>('update public.products set price = $1, available_stock = $2 where product_id = $3 returning product_id, name, price, weight_gram, available_stock, status', [price, stock, productId]);
       const row = updated.rows[0];
+      if (!row) {
+        return reply.code(404).send({ error: { code: 'PRODUCT_NOT_FOUND', message: 'ไม่พบสินค้า' } });
+      }
 
       return {
         data: {
