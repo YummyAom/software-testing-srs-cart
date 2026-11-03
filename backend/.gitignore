@@ -13,6 +13,3 @@ coverage/
 *.log
 .vitest/
 .nyc_output/
-
-# Tests (local only)
-tests/
