@@ -7,7 +7,7 @@ export class AuthService {
 
   async logout(accessToken: string): Promise<void> {
     const result = await this.repository.signOut(accessToken);
-    if (result === 'invalid_token') throw new AuthServiceError(401, 'AUTH_INVALID_TOKEN', 'Invalid or expired access token');
+    if (result === 'invalid_token') throw new AuthServiceError(401, 'AUTH_REQUIRED', 'Invalid or expired access token');
     if (result === 'unavailable') throw new AuthServiceError(503, 'AUTH_UNAVAILABLE', 'Authentication service is unavailable');
   }
 

@@ -5,6 +5,7 @@ import { registerProductRoutes } from './modules/product/product-routes.js';
 import { registerCartRoutes } from './modules/cart/cart-routes.js';
 import { registerOrderRoutes } from './modules/order/order-routes.js';
 import { registerAdminRoutes } from './modules/admin/admin-routes.js';
+import { registerTestRoutes } from './modules/test/test-routes.js';
 import type { AppConfig } from './interfaces/config.js';
 import { registerSwagger } from './docs/swagger.js';
 import { Database } from './database.js';
@@ -49,7 +50,10 @@ export function createApp(config: AppConfig, database = new Database(config.dbUr
   registerAuthRoutes(app, config.supabase, config.uiOrigin, database);
   registerProductRoutes(app, config.supabase, config.uiOrigin, database);
   registerCartRoutes(app, config.supabase, config.uiOrigin, database);
-  registerOrderRoutes(app, config.supabase, config.uiOrigin, database);
+  // Gateway simulator: development + test (SRS §1.3/DC-3.3 do not forbid it outside test); reset stays test-only (DC-3.2).
+  registerOrderRoutes(app, config.supabase, config.uiOrigin, database,
+    config.appEnv === 'development' || config.appEnv === 'test');
   registerAdminRoutes(app, config.supabase, config.uiOrigin, database);
+  if (config.appEnv === 'test') registerTestRoutes(app, config.testResetToken, database);
   return app;
 }

@@ -27,7 +27,7 @@ Machine-readable definition: [OpenAPI 3.1](../api/openapi.json). API origin เนเ
 | support | GET /auth/me | none | 200 | UserState |
 | test | POST /test/reset | none; X-Test-Reset-Token header | 200 | {reset:true} |
 
-OP-10/11 and reset exist only APP_ENV=test. Simulator has no Customer auth requirement; reset requires isolated test secret. Error for absent route is ordinary 404, not falsely mapped ORDER_NOT_FOUND. Every other OP except login requires auth; roles follow SRS
+OP-10/11 (gateway simulator) exist only APP_ENV=development|test; reset exists only APP_ENV=test (DC-3.2). Simulator has no Customer auth requirement; reset requires isolated test secret. Error for absent route is ordinary 404, not falsely mapped ORDER_NOT_FOUND. Every other OP except login requires auth; roles follow SRS
 
 ## Success envelope and DTOs
 

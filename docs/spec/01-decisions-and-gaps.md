@@ -10,7 +10,7 @@ SRS v1.8 เป็น baseline. Workbook ใช้สำหรับ methods/pat
 |---|---|---|
 | D-01 | qty หรือ quantity | ใช้ `quantity` ทั้ง add/update/response ตาม OP และ DC-1; ไม่รับ alias qty เพื่อไม่ให้ ambiguous. เป็น refinement ของ workbook |
 | D-02 | cancel path param | `DELETE /cart/checkout` ไม่มี path/body orderId; backend หา current pending order ของ authenticated Customer ตาม OP-9 |
-| D-03 | gateway Authorization | SRS ระบุ gateway auth out of scope; OP-10/11 ไม่ใช้ Customer auth/ownership. Workbook Authorization cell ขัดกับ scope จึงยึด SRS; ไม่ deploy simulator endpoints เป็น public production feature |
+| D-03 | gateway Authorization | SRS ระบุ gateway auth out of scope; OP-10/11 ไม่ใช้ Customer auth/ownership. Workbook Authorization cell ขัดกับ scope จึงยึด SRS; ไม่ deploy simulator endpoints เป็น public production feature; เปิด simulator (OP-10/11 + ปุ่ม) ใน APP_ENV=development|test เพราะ SRS DC-3.2 จำกัดเฉพาะ reset และ DC-3.3 บังคับแค่ว่า test ต้องมีปุ่ม |
 | D-04 | status mapping cells | ยึด shared mapping ของ workbook: business rejection 400, auth 401/403, missing resources 404, checkout 201, อื่น 200 |
 | D-05 | OP-17 response | คืน coupons ทั้งหมดหลัง toggle ตาม workbook ไม่ใช่ coupon เดียว |
 | D-06 | HTTP base | Paths เดิม ไม่มี `/api` prefix ใน contract; development proxy แยก API origin กับ UI origin ไม่ให้ GET /products และ GET /orders ชนกัน |

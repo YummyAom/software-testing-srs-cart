@@ -10,8 +10,8 @@ All SRS tests expected values must cite FR/AC and independent manual arithmetic/
 
 1. Unit: 10 pure functions with exported exact signatures. Inputs explicit, outputs/error precedence per DC/FR. No DB/HTTP/time mocks needed. classifyWeight zero/negative excluded until clarification.
 2. Contract/service: actual API factory listening/injection plus real local Supabase PostgreSQL. Auth integration login ผ่าน backend ด้วย seeded username/password และตรวจ backend-issued JWT จริง ไม่มี Supabase Auth dependency หรือ mocked principal. Validate OpenAPI success/error schema, authorization, state transitions, stock, snapshots, isolation. Capture public read views for all Customer/Admin contexts before and after rejection; supplement domain-table state comparison through test fixture when state isn't externally visible, not as replacement for behavioral checks.
-3. E2E: Playwright with browser per Customer/Admin identity, real API/local DB, deterministic seed reset. Use roles/labels and specified IDs/attributes. Gateway buttons only test. Read values from data-value/status/available, not parsed localized strings.
-4. Security/operational DESIGN checks: anon/authenticated direct Supabase table SELECT/INSERT/UPDATE/DELETE denied; no client keys capable of writes; reset/callback routes absent outside test; transaction rollback on injected database failure. No race-condition campaign required
+3. E2E: Playwright with browser per Customer/Admin identity, real API/local DB, deterministic seed reset. Use roles/labels and specified IDs/attributes. Gateway buttons only development/test (required in test per DC-3.3). Read values from data-value/status/available, not parsed localized strings.
+4. Security/operational DESIGN checks: anon/authenticated direct Supabase table SELECT/INSERT/UPDATE/DELETE denied; no client keys capable of writes; reset route absent outside test; callback routes absent outside development/test; transaction rollback on injected database failure. No race-condition campaign required
 
 ## Backend-owned authentication test design
 

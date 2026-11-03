@@ -100,7 +100,7 @@ const specification: StaticDocumentSpec = {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
                   missing: { value: { error: { code: 'AUTH_REQUIRED', message: 'Bearer access token is required' } } },
-                  invalid: { value: { error: { code: 'AUTH_INVALID_TOKEN', message: 'Invalid or expired access token' } } },
+                  invalid: { value: { error: { code: 'AUTH_REQUIRED', message: 'Invalid or expired access token' } } },
                 },
               } },
             },

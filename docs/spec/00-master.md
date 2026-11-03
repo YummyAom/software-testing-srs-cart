@@ -73,7 +73,7 @@ Web UI และ api-server แบบ persistent monolith ใช้บัญช�
 59. As a test author, I want to observe outcomes ผ่าน test IDs และ data attributes ที่กำหนด, so that E2E เสถียรและไม่อ่าน hidden implementation
 60. As a test author, I want to reset test environment กลับ seed, so that tests เป็นอิสระจากกัน
 61. As a test author, I want to test pure functions ตาม signatures เดิม, so that expected values อิง SRS ไม่ใช่ route implementation
-62. As a deployment operator, I want to have reset และ gateway buttons ปิดนอก test environment, so that ไม่มี test control ทำลายข้อมูลจริง
+62. As a deployment operator, I want to have reset ปิดนอก test environment และ gateway simulator ปิดนอก development/test, so that ไม่มี test control ทำลายข้อมูลจริง
 
 ## Implementation Decisions
 
@@ -87,7 +87,7 @@ Web UI และ api-server แบบ persistent monolith ใช้บัญช�
 - มี DB constraints สำหรับ invariant ที่ไม่ขัดกับ SRS และไม่มี upper stock constraint 9,999 ที่ทำให้การคืนสต็อกตาม snapshot ถูกปฏิเสธ
 - เก็บ integer บาท/กรัม, floor ใน pure functions, current cart valuation แยกจาก immutable order valuation; เปิด RLS และปิด direct browser access ของ domain tables; backend ใช้ server-only PostgreSQL credentials และ transaction บน connection เดียว
 - DC-1 signatures ทั้งหมดคงตามต้นฉบับ; route processing ต้องเรียกผ่าน orchestration ไม่เขียนสูตรซ้ำ
-- UI ต้องใช้ URL/test IDs/data attributes ตาม DC-2 และ test-only gateway buttons ตาม DC-3
+- UI ต้องใช้ URL/test IDs/data attributes ตาม DC-2 และ gateway buttons ใน development/test ตาม DC-3
 - บันทึก SOI แยกจาก API/design decisions; ไม่สร้าง SRS expected values สำหรับพฤติกรรมที่ SRS ไม่กำหนด
 
 ## Testing Decisions
