@@ -1,8 +1,34 @@
 import { Link, useNavigate } from "react-router-dom"
 import { ShoppingBag } from "lucide-react"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useAuth } from "@/src/context/auth-context"
-import { cartPreview } from "@/lib/commerce-demo-data"
+import { CART_CHANGED_EVENT, getCartApi } from "@/src/lib/api-client"
+
+/** Number of cart lines (FR-2.9 definition) from api-server; refreshes after cart-changing calls. */
+function useCartLineCount(enabled: boolean, accessToken: string | null): number {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!enabled || !accessToken) {
+      setCount(0)
+      return
+    }
+    let cancelled = false
+    const refresh = () => {
+      getCartApi(accessToken)
+        .then((cart) => { if (!cancelled) setCount(cart.lineCount) })
+        .catch(() => { if (!cancelled) setCount(0) })
+    }
+    refresh()
+    window.addEventListener(CART_CHANGED_EVENT, refresh)
+    return () => {
+      cancelled = true
+      window.removeEventListener(CART_CHANGED_EVENT, refresh)
+    }
+  }, [enabled, accessToken])
+
+  return count
+}
 
 type AppRole = "guest" | "customer" | "admin"
 type ActivePage = "products" | "cart" | "checkout" | "success" | "orders" | "admin-products" | "admin-coupons"
@@ -49,10 +75,10 @@ export function AppShell({
   hideFooter?: boolean
 }) {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, accessToken, logout } = useAuth()
   const role = propRole || (user?.role as AppRole) || "guest"
   const customerFlowHref = activePage === "checkout" ? "/checkout" : activePage === "success" ? "/success" : "/cart"
-  const cartItemCount = cartPreview.lines.length
+  const cartItemCount = useCartLineCount(role === "customer", accessToken)
   const navigation =
     role === "customer"
       ? customerNavigation.map((item) =>
@@ -124,8 +150,7 @@ export function AppShell({
       {!hideFooter && (
         <footer className="site-footer">
           <div className="site-footer-inner">
-            <span>ต้นแบบหน้าจอสำหรับตรวจสอบรูปแบบการใช้งาน</span>
-            <span>ยังไม่ได้เชื่อมต่อ api-server</span>
+            <span>ระบบสั่งซื้อ</span>
           </div>
         </footer>
       )}
