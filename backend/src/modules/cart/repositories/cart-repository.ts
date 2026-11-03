@@ -74,6 +74,13 @@ export class PostgresCartRepository implements CartRepository {
       subtotal: calculateSubtotal(lines.map(line => ({ price: line.unitPrice, quantity: line.quantity }))), lines };
   }
 
+  async assertCartStage(customerId: string): Promise<void> {
+    let stage: Cart['stage'];
+    try { stage = (await this.database.transaction(client => this.state(client, customerId))).stage; }
+    catch { throw new CartServiceError(503, 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้', undefined, 'upstream'); }
+    if (stage !== 'cart') businessError('OPERATION_NOT_ALLOWED');
+  }
+
   async viewCart(customerId: string): Promise<Cart> {
     try { return await this.database.transaction(client => this.cart(client, customerId)); }
     catch { throw new CartServiceError(503, 'CART_UNAVAILABLE', 'ไม่สามารถเข้าถึงตะกร้าได้', undefined, 'upstream'); }

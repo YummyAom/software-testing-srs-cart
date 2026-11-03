@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DemoOrderStatus } from "@/lib/commerce-demo-data"
-import { formatTHB, scaffoldNotice } from "@/lib/commerce-demo-data"
+import { formatTHB } from "@/lib/commerce-demo-data"
 
 type MessageKind = "error" | "notice" | "info"
 type StatusTone = "positive" | "warning" | "danger" | "neutral"
@@ -47,7 +47,7 @@ export function PageScaffold({
   title,
   description,
   children,
-  message = scaffoldNotice,
+  message = null,
   messageKind = "info",
   messageCode = "",
   headingAside,

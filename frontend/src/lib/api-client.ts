@@ -107,6 +107,12 @@ export class ApiError extends Error {
 
 const BASE_URL = 'http://localhost:3001';
 
+/** Fired after any call that can change the cart's line count, so the nav badge can refresh. */
+export const CART_CHANGED_EVENT = 'cart-changed';
+function notifyCartChanged(): void {
+  window.dispatchEvent(new Event(CART_CHANGED_EVENT));
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<{ data: T; messages: any[] }> {
   const url = `${BASE_URL}${path}`;
   const response = await fetch(url, options);
@@ -159,6 +165,7 @@ export async function addCartItemApi(token: string, productId: string, quantity:
     },
     body: JSON.stringify({ productId, quantity }),
   });
+  notifyCartChanged();
   return res.data;
 }
 
@@ -171,6 +178,7 @@ export async function updateCartItemQtyApi(token: string, productId: string, qua
     },
     body: JSON.stringify({ quantity }),
   });
+  notifyCartChanged();
   return res.data;
 }
 
@@ -179,6 +187,7 @@ export async function removeCartItemApi(token: string, productId: string): Promi
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  notifyCartChanged();
   return res.data;
 }
 
@@ -194,7 +203,14 @@ export async function applyCartCouponApi(token: string, code: string): Promise<C
   return res.data;
 }
 
-export async function checkoutCartApi(token: string, zone: string, speed: string): Promise<{ customer: any; order: Order }> {
+/** A response message from api-server, e.g. the COUPON_NOT_APPLICABLE notice (FR-4.3.2). */
+export interface ApiMessage {
+  kind: 'error' | 'notice' | 'info';
+  code: string;
+  message: string;
+}
+
+export async function checkoutCartApi(token: string, zone: string, speed: string): Promise<{ customer: any; order: Order; messages: ApiMessage[] }> {
   const res = await request<{ customer: any; order: Order }>('/cart/checkout', {
     method: 'POST',
     headers: {
@@ -203,7 +219,7 @@ export async function checkoutCartApi(token: string, zone: string, speed: string
     },
     body: JSON.stringify({ zone, speed }),
   });
-  return res.data;
+  return { ...res.data, messages: res.messages ?? [] };
 }
 
 export async function cancelCheckoutApi(token: string): Promise<any> {
@@ -211,15 +227,18 @@ export async function cancelCheckoutApi(token: string): Promise<any> {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  notifyCartChanged();
   return res.data;
 }
 
 export async function paySuccessApi(orderId: string): Promise<any> {
-  return request(`/orders/${orderId}/pay-success`, {
+  const res = await request(`/orders/${orderId}/pay-success`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ result: 'success' }),
   });
+  notifyCartChanged();
+  return res;
 }
 
 export async function payFailApi(orderId: string): Promise<any> {
@@ -235,6 +254,7 @@ export async function continueShoppingApi(token: string): Promise<any> {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
   });
+  notifyCartChanged();
   return res.data;
 }
 

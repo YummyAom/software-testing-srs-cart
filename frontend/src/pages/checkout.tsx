@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
-import { Navigate, useNavigate } from "react-router-dom"
+import { Navigate, useLocation, useNavigate } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
 import {
   ApiError,
+  type ApiMessage,
   cancelCheckoutApi,
   getAuthMeApi,
   getOrderApi,
@@ -13,15 +14,20 @@ import {
   paySuccessApi,
 } from "@/src/lib/api-client"
 
-type PageMessage = { kind: "error" | "info"; text: string; code: string }
+type PageMessage = { kind: "error" | "notice" | "info"; text: string; code: string }
 
 const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
 
 export default function CheckoutPage() {
+  const location = useLocation()
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingOrder, setLoadingOrder] = useState(true)
-  const [message, setMessage] = useState<PageMessage | null>(null)
+  // FR-4.3.2: notice from pressCheckout (cart page) is shown here until the next operation.
+  const [message, setMessage] = useState<PageMessage | null>(() => {
+    const notice = (location.state as { notice?: ApiMessage | null } | null)?.notice
+    return notice ? { kind: "notice", text: notice.message, code: notice.code } : null
+  })
   const navigate = useNavigate()
   const { accessToken } = useAuth()
 

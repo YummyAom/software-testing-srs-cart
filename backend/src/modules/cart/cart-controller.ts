@@ -17,6 +17,8 @@ function createItemHandler(operation: 'add' | 'update', config: SupabaseAuthConf
         request.log.warn({ event: `cart_${operation}_rejected`, code: 'AUTH_FORBIDDEN' }, 'Cart request rejected');
         return reply.code(403).send({ error: { code: 'AUTH_FORBIDDEN', message: 'Only customers can change a cart' } });
       }
+      // SOI-04: auth -> role -> stage (FR-8.1) -> request shape -> FR-2.6.
+      await service.assertCartStage(principal.id);
       const body = bodyObject(request.body, operation === 'add' ? ['productId', 'quantity'] : ['quantity']);
       const source = operation === 'add' ? body : request.params as Record<string, unknown>;
       const productId = stringField(source, 'productId');
@@ -59,6 +61,8 @@ export function createCartActionHandler(action: CartAction, config: SupabaseAuth
         return reply.code(403).send({ error: { code: 'AUTH_FORBIDDEN', message: 'Only customers can access a cart' } });
       }
       request.log.info({ event: `cart_${action}_db_start` }, 'Processing cart action');
+      // SOI-04: stage (FR-8.1) is checked before the request body shape.
+      if (action === 'remove' || action === 'coupon' || action === 'checkout') await service.assertCartStage(principal.id);
       if (action === 'remove') {
         const productId = stringField(request.params as Record<string, unknown>, 'productId');
         if (!productId) throw new HttpError('VALIDATION_ERROR', 'productId ต้องไม่ว่าง');
@@ -69,7 +73,7 @@ export function createCartActionHandler(action: CartAction, config: SupabaseAuth
       if (action === 'coupon') {
         const body = bodyObject(request.body, ['code']);
         const code = stringField(body, 'code');
-        if (!code) throw new HttpError('VALIDATION_ERROR', 'code ต้องไม่ว่าง', { fields: ['code'] });
+        // FR-3.1.2: an empty code is a code that does not exist → COUPON_INVALID from the repository.
         return { data: await service.applyCoupon(principal.id, code), messages: [] };
       }
       if (action === 'view') return { data: await service.viewCart(principal.id), messages: [] };

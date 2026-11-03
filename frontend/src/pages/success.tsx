@@ -4,13 +4,19 @@ import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
 import {
+  ApiError,
   continueShoppingApi,
   getAuthMeApi,
   getOrderApi,
   Order,
 } from "@/src/lib/api-client"
 
+type PageMessage = { kind: "error"; text: string; code: string }
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
+
 export default function SuccessPage() {
+  const [message, setMessage] = useState<PageMessage | null>(null)
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingOrder, setLoadingOrder] = useState(true)
@@ -41,15 +47,19 @@ export default function SuccessPage() {
     load()
   }, [accessToken, location.state])
 
+  // OP-12 / FR-6.4: back to the (now empty) cart; a rejection stays here and is shown (DC-2.8).
   const handleContinueShopping = async () => {
+    if (!accessToken) {
+      navigate("/login", { replace: true })
+      return
+    }
     setIsLoading(true)
+    setMessage(null)
     try {
-      if (accessToken) {
-        await continueShoppingApi(accessToken)
-      }
-      navigate("/products")
-    } catch {
-      navigate("/products")
+      await continueShoppingApi(accessToken)
+      navigate("/cart")
+    } catch (err: any) {
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถกลับไปยังรถเข็นได้", code: errorCode(err) })
     } finally {
       setIsLoading(false)
     }
@@ -61,6 +71,9 @@ export default function SuccessPage() {
         pageTestId="page-success"
         title="คำสั่งซื้อเสร็จสมบูรณ์"
         description="รายละเอียดด้านล่างเป็น snapshot สำหรับหน้าสถานะสำเร็จ"
+        message={message?.text ?? null}
+        messageKind={message?.kind}
+        messageCode={message?.code}
       >
         <Panel title="รายละเอียดคำสั่งซื้อ">
           {loadingOrder ? (

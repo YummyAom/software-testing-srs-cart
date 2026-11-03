@@ -3,13 +3,15 @@ import { Link } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
-import { getOrdersApi, OrderSummary } from "@/src/lib/api-client"
+import { ApiError, getOrdersApi, OrderSummary } from "@/src/lib/api-client"
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
 
 export default function OrdersPage() {
   const { accessToken } = useAuth()
   const [orders, setOrders] = useState<OrderSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ text: string; code: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -20,7 +22,7 @@ export default function OrdersPage() {
         const data = await getOrdersApi(accessToken)
         setOrders(data)
       } catch (err: any) {
-        setError(err.message || "ไม่สามารถโหลดประวัติคำสั่งซื้อได้")
+        setError({ text: err.message || "ไม่สามารถโหลดประวัติคำสั่งซื้อได้", code: errorCode(err) })
       } finally {
         setLoading(false)
       }
@@ -55,7 +57,7 @@ export default function OrdersPage() {
             className="demo-scaffold-banner"
             data-testid="app-message"
             data-kind="error"
-            data-code="ORDER_UNAVAILABLE"
+            data-code={error.code}
             role="alert"
             style={{
               padding: "1rem",
@@ -66,7 +68,7 @@ export default function OrdersPage() {
               border: "1px solid #f87171",
             }}
           >
-            <p>{error}</p>
+            <p>{error.text}</p>
           </div>
         )}
 

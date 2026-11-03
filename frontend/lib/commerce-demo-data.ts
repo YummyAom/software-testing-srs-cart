@@ -137,39 +137,10 @@ export const demoOrders: DemoOrder[] = [
   },
 ]
 
-export const cartPreview = {
-  lines: [
-    {
-      productId: "prod-101",
-      name: "สินค้าตัวอย่าง A",
-      unitPrice: 120,
-      quantity: 2,
-      available: true,
-    },
-    {
-      productId: "prod-102",
-      name: "สินค้าตัวอย่าง B",
-      unitPrice: 250,
-      quantity: 1,
-      available: false,
-    },
-  ],
-  couponCode: "",
-  subtotal: 490,
-  discount: 0,
-  shipping: 35,
-  total: 525,
-  zone: "inCity",
-  speed: "standard",
-}
-
 export const demoCoupons = [
   { code: "EXAMPLE10", percent: 10, minSpend: 500, status: "active" },
   { code: "EXAMPLE15", percent: 15, minSpend: 1000, status: "inactive" },
 ] as const
-
-export const scaffoldNotice =
-  "โหมดตัวอย่าง: ข้อมูลในหน้านี้ใช้จัดวาง UI เท่านั้น ยังไม่ได้เชื่อมต่อ api-server และปุ่มที่เปลี่ยนข้อมูลยังปิดใช้งาน"
 
 export function formatTHB(amount: number) {
   return `${new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(amount)} บาท`
