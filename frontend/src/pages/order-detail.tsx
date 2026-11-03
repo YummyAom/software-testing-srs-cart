@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { Link, Navigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { AppShell } from "@/components/commerce/shell"
 import {
@@ -17,24 +17,38 @@ export default function OrderDetailPage() {
   const { accessToken } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ code: string; message: string } | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       if (!accessToken || !orderId) return
+      setOrder(null)
+      setError(null)
+      setLoading(true)
       try {
-        setLoading(true)
-        setError(null)
         const data = await getOrderApi(accessToken, orderId)
-        setOrder(data)
+        if (!cancelled) setOrder(data)
       } catch (err: any) {
-        setError(err.message || "ไม่พบคำสั่งซื้อ")
+        if (cancelled) return
+        const code: string = err.code ?? ""
+        setError({
+          code,
+          message:
+            err.message ||
+            (code === "ORDER_NOT_FOUND" ? "ไม่พบคำสั่งซื้อ" : "ไม่สามารถโหลดคำสั่งซื้อได้"),
+        })
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     load()
+    return () => {
+      cancelled = true
+    }
   }, [accessToken, orderId])
+
+  if (!accessToken) return <Navigate to="/login" replace />
 
   const formatDate = (iso?: string) => {
     if (!iso) return ""
@@ -58,9 +72,9 @@ export default function OrderDetailPage() {
         pageTestId="page-order-detail"
         title="รายละเอียดคำสั่งซื้อ"
         description={order ? `คำสั่งซื้อ ${order.orderId}` : undefined}
-        message={error ? "ไม่พบคำสั่งซื้อ" : undefined}
+        message={error ? error.message : null}
         messageKind={error ? "error" : "info"}
-        messageCode={error ? "ORDER_NOT_FOUND" : ""}
+        messageCode={error ? error.code : ""}
         className="max-w-5xl mx-auto w-full"
       >
         {loading ? (
