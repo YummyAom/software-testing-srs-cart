@@ -238,6 +238,8 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
+              {/* DC-3.3: gateway simulator buttons in development (Vite dev server) and test builds. */}
+              {(import.meta.env.DEV || import.meta.env.VITE_APP_ENV === "test") && (
               <div
                 style={{
                   marginTop: "1.5rem",
@@ -273,6 +275,7 @@ export default function CheckoutPage() {
                   </button>
                 </div>
               </div>
+              )}
             </Panel>
           </aside>
         </div>

@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom"
+import { StageGuard } from "./components/stage-guard"
 import { AuthProvider } from "./context/auth-context"
 import AdminCouponsPage from "./pages/admin-coupons"
 import AdminProductsPage from "./pages/admin-products"
@@ -17,9 +18,9 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/products" element={<ProductsPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/cart" element={<StageGuard page="cart"><CartPage /></StageGuard>} />
+        <Route path="/checkout" element={<StageGuard page="checkout"><CheckoutPage /></StageGuard>} />
+        <Route path="/success" element={<StageGuard page="success"><SuccessPage /></StageGuard>} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/admin/products" element={<AdminProductsPage />} />
