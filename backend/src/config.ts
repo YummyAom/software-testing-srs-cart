@@ -28,6 +28,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     appEnv,
     uiOrigin: env.UI_ORIGIN ?? 'http://localhost:5173',
     dbUrl: dbUrl.toString(),
+    ...(appEnv === 'test' ? { testResetToken: required('TEST_RESET_TOKEN') } : {}),
     supabase: {
       url: url.origin,
       publishableKey: required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),

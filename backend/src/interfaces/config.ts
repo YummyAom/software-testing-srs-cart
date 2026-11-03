@@ -8,6 +8,8 @@ export interface AppConfig {
   supabase: SupabaseAuthConfig;
   dbUrl?: string;
   uiOrigin: string;
+  /** DC-3.1 reset secret; only read when appEnv is 'test'. */
+  testResetToken?: string;
 }
 
 export interface ServerConfig {
