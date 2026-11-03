@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Navigate, useNavigate } from "react-router-dom"
 import { AppShell } from "@/components/commerce/shell"
 import { MoneyValue, OrderStatusPill, PageScaffold, Panel, QuantityValue } from "@/components/commerce/ui"
 import { useAuth } from "@/src/context/auth-context"
 import {
+  ApiError,
   cancelCheckoutApi,
   getAuthMeApi,
   getOrderApi,
@@ -12,13 +13,16 @@ import {
   paySuccessApi,
 } from "@/src/lib/api-client"
 
+type PageMessage = { kind: "error" | "info"; text: string; code: string }
+
+const errorCode = (err: unknown) => (err instanceof ApiError && err.code ? err.code : "")
+
 export default function CheckoutPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingOrder, setLoadingOrder] = useState(true)
-  const [message, setMessage] = useState<{ kind: "error" | "info" | "success"; text: string } | null>(null)
+  const [message, setMessage] = useState<PageMessage | null>(null)
   const navigate = useNavigate()
-  const location = useLocation()
   const { accessToken } = useAuth()
 
   useEffect(() => {
@@ -26,25 +30,22 @@ export default function CheckoutPage() {
       if (!accessToken) return
       try {
         setLoadingOrder(true)
-        let orderId = location.state?.orderId
-        if (!orderId) {
-          const me = await getAuthMeApi(accessToken)
-          orderId = me.currentOrderId
-        }
-        if (orderId) {
-          const ord = await getOrderApi(accessToken, orderId)
+        // The server's currentOrderId is the source of truth; history state can be stale.
+        const me = await getAuthMeApi(accessToken)
+        if (me.currentOrderId) {
+          const ord = await getOrderApi(accessToken, me.currentOrderId)
           setOrder(ord)
         } else {
-          setMessage({ kind: "error", text: "ไม่พบคำสั่งซื้อที่รอชำระเงิน" })
+          setMessage({ kind: "error", text: "ไม่พบคำสั่งซื้อที่รอชำระเงิน", code: "" })
         }
       } catch (err: any) {
-        setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้" })
+        setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้", code: errorCode(err) })
       } finally {
         setLoadingOrder(false)
       }
     }
     load()
-  }, [accessToken, location.state])
+  }, [accessToken])
 
   const handlePaySuccess = async () => {
     if (!order) return
@@ -54,7 +55,7 @@ export default function CheckoutPage() {
       await paySuccessApi(order.orderId)
       navigate("/success", { state: { orderId: order.orderId } })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการชำระเงิน" })
+      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการชำระเงิน", code: errorCode(err) })
     } finally {
       setIsLoading(false)
     }
@@ -67,33 +68,37 @@ export default function CheckoutPage() {
     try {
       const response = await payFailApi(order.orderId)
       const infoText = response.messages?.[0]?.message || "การชำระเงินล้มเหลว กรุณาลองใหม่"
-      setMessage({ kind: "info", text: infoText })
+      setMessage({ kind: "info", text: infoText, code: "" })
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "การชำระเงินล้มเหลว กรุณาลองใหม่" })
+      setMessage({ kind: "error", text: err.message || "ไม่สามารถดำเนินการได้ กรุณาลองใหม่", code: errorCode(err) })
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleCancelCheckout = async () => {
+    if (!accessToken) {
+      navigate("/login", { replace: true })
+      return
+    }
     setIsLoading(true)
     setMessage(null)
     try {
-      if (accessToken) {
-        await cancelCheckoutApi(accessToken)
-      }
+      await cancelCheckoutApi(accessToken)
       navigate("/cart")
     } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ" })
+      setMessage({ kind: "error", text: err.message || "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ", code: errorCode(err) })
     } finally {
       setIsLoading(false)
     }
   }
 
+  if (!accessToken) return <Navigate to="/login" replace />
+
   if (loadingOrder) {
     return (
       <AppShell role="customer" activePage="checkout">
-        <PageScaffold pageTestId="page-checkout" title="ตรวจสอบคำสั่งซื้อ">
+        <PageScaffold pageTestId="page-checkout" title="ตรวจสอบคำสั่งซื้อ" message={null}>
           <div style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>
             กำลังโหลดข้อมูลคำสั่งซื้อ...
           </div>
@@ -108,9 +113,9 @@ export default function CheckoutPage() {
         <PageScaffold
           pageTestId="page-checkout"
           title="ตรวจสอบคำสั่งซื้อ"
-          message={message?.text || "ไม่พบคำสั่งซื้อที่รอชำระเงิน"}
-          messageKind="error"
-          messageCode="ORDER_NOT_FOUND"
+          message={message?.text ?? "ไม่พบคำสั่งซื้อที่รอชำระเงิน"}
+          messageKind={message?.kind ?? "error"}
+          messageCode={message?.code ?? ""}
         >
           <button
             type="button"
@@ -130,29 +135,10 @@ export default function CheckoutPage() {
         pageTestId="page-checkout"
         title="ตรวจสอบคำสั่งซื้อ"
         description="ตรวจสอบ snapshot ของรายการและยอดชำระก่อนชำระเงิน"
+        message={message?.text ?? null}
+        messageKind={message?.kind}
+        messageCode={message?.code}
       >
-        {message && (
-          <div
-            className="demo-scaffold-banner"
-            data-testid="app-message"
-            data-kind={message.kind}
-            data-code=""
-            role={message.kind === "error" ? "alert" : "status"}
-            aria-live="polite"
-            style={{
-              padding: "1rem",
-              marginBottom: "1.5rem",
-              borderRadius: "6px",
-              backgroundColor: message.kind === "error" ? "#fee2e2" : "#fef3c7",
-              color: message.kind === "error" ? "#991b1b" : "#92400e",
-              border: `1px solid ${message.kind === "error" ? "#f87171" : "#fcd34d"}`,
-              fontWeight: 500,
-            }}
-          >
-            {message.text}
-          </div>
-        )}
-
         <div className="checkout-layout">
           <Panel title="รายการสินค้าในคำสั่งซื้อ">
             <div className="order-reference">
