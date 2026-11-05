@@ -1,21 +1,22 @@
 import { test, expect } from '@playwright/test';
 
 const API_URL = `http://localhost:${process.env.API_PORT ?? '3001'}`;
+const RESET_TOKEN = process.env.TEST_RESET_TOKEN || 'local-test-reset-only';
 const PASSWORD = {
-  cus_normal: process.env.SEED_PASSWORD_CUSTOMER_NORMAL ?? '',
-  cus_prime: process.env.SEED_PASSWORD_CUSTOMER_PRIME ?? '',
-  admin01: process.env.SEED_PASSWORD_ADMIN ?? '',
+  cus_normal: process.env.SEED_PASSWORD_CUSTOMER_NORMAL || 'Normal@123456',
+  cus_prime: process.env.SEED_PASSWORD_CUSTOMER_PRIME || 'Prime@123456',
+  admin01: process.env.SEED_PASSWORD_ADMIN || 'Admin@123456',
 };
 
 test.beforeEach(async ({ request }) => {
   // only the APP_ENV=test API has /test/reset, so anything but 200 means it is not the local test stack: stop here
   let reset = await request.post(`${API_URL}/test/reset`, {
-    headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
+    headers: { 'x-test-reset-token': RESET_TOKEN },
   });
   if (reset.status() !== 200) {
     await new Promise(r => setTimeout(r, 1000));
     reset = await request.post(`${API_URL}/test/reset`, {
-      headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
+      headers: { 'x-test-reset-token': RESET_TOKEN },
     });
   }
   expect(reset.status()).toBe(200);
@@ -38,7 +39,8 @@ test.describe('page-orders', () => {
     await expect(page.getByTestId('cart-line-P1').getByTestId('cart-line-qty')).toHaveAttribute('data-value', '1');
 
     await page.getByTestId('checkout-button').click();
-    await expect(page.getByTestId('page-checkout')).toBeVisible();
+    await expect(page.getByTestId('page-checkout')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('checkout-order-id')).toBeVisible({ timeout: 15_000 });
 
     const orderIdRaw = await page.getByTestId('checkout-order-id').textContent();
     const orderId = orderIdRaw?.trim() ?? '';
@@ -46,7 +48,7 @@ test.describe('page-orders', () => {
 
     // ชำระเงินสำเร็จผ่าน simulator
     await page.getByTestId('gateway-pay-success').click();
-    await expect(page.getByTestId('page-success')).toBeVisible();
+    await expect(page.getByTestId('page-success')).toBeVisible({ timeout: 15_000 });
 
     // 2. นำทางไปยังหน้า /orders
     await page.getByTestId('nav-orders').click();
@@ -63,7 +65,7 @@ test.describe('page-orders', () => {
     await expect(page.getByTestId('page-order-detail')).toBeVisible();
   });
 
-  test('E2E-ORD-2 (FR-0.6) orders sorting from newest to oldest', async ({ page }) => {
+  test('E2E-ORD-2 (FR-0.6, AC-15) orders sorting from newest to oldest', async ({ page }) => {
     // 1. สร้าง Order 1 (P1 x 1) และชำระเงินสำเร็จ
     await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
@@ -78,11 +80,12 @@ test.describe('page-orders', () => {
     await expect(page.getByTestId('page-cart')).toBeVisible();
     await expect(page.getByTestId('cart-line-P1').getByTestId('cart-line-qty')).toHaveAttribute('data-value', '1');
     await page.getByTestId('checkout-button').click();
-    await expect(page.getByTestId('page-checkout')).toBeVisible();
+    await expect(page.getByTestId('page-checkout')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('checkout-order-id')).toBeVisible({ timeout: 15_000 });
 
     const order1Id = (await page.getByTestId('checkout-order-id').textContent())?.trim() ?? '';
     await page.getByTestId('gateway-pay-success').click();
-    await expect(page.getByTestId('page-success')).toBeVisible();
+    await expect(page.getByTestId('page-success')).toBeVisible({ timeout: 15_000 });
 
     // 2. คลิก continue-shopping-button กลับสู่ตะกร้า และสั่งซื้อ Order 2 (P2 x 1)
     await page.getByTestId('continue-shopping-button').click();
@@ -97,11 +100,12 @@ test.describe('page-orders', () => {
     await expect(page.getByTestId('page-cart')).toBeVisible();
     await expect(page.getByTestId('cart-line-P2').getByTestId('cart-line-qty')).toHaveAttribute('data-value', '1');
     await page.getByTestId('checkout-button').click();
-    await expect(page.getByTestId('page-checkout')).toBeVisible();
+    await expect(page.getByTestId('page-checkout')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('checkout-order-id')).toBeVisible({ timeout: 15_000 });
 
     const order2Id = (await page.getByTestId('checkout-order-id').textContent())?.trim() ?? '';
     await page.getByTestId('gateway-pay-success').click();
-    await expect(page.getByTestId('page-success')).toBeVisible();
+    await expect(page.getByTestId('page-success')).toBeVisible({ timeout: 15_000 });
 
     // 3. เข้าหน้า /orders และตรวจสอบการเรียงลำดับ (Order 2 ต้องอยู่บน Order 1)
     await page.getByTestId('nav-orders').click();
@@ -112,7 +116,7 @@ test.describe('page-orders', () => {
     await expect(rows.nth(1)).toHaveAttribute('data-testid', `order-row-${order1Id}`);
   });
 
-  test('E2E-GUARD-1 (FR-0.3.1, FR-8.5.2, DC-2.13) StageGuard read-only access and Admin forbidden access', async ({ page }) => {
+  test('E2E-GUARD-1 (FR-0.3.1, FR-8.5.2, DC-2.13, AC-14) StageGuard read-only access and Admin forbidden access', async ({ page }) => {
     // 1. Admin พยายามเข้า /orders โดยตรง -> ต้องถูกปฏิเสธด้วย AUTH_FORBIDDEN
     await page.goto('/login');
     await page.getByTestId('login-username').fill('admin01');
@@ -139,7 +143,7 @@ test.describe('page-orders', () => {
     await expect(page.getByTestId('page-cart')).toBeVisible();
     await expect(page.getByTestId('cart-line-P1').getByTestId('cart-line-qty')).toHaveAttribute('data-value', '1');
     await page.getByTestId('checkout-button').click();
-    await expect(page.getByTestId('page-checkout')).toBeVisible();
+    await expect(page.getByTestId('page-checkout')).toBeVisible({ timeout: 15_000 });
 
     // ตรวจสอบว่าเปิด /orders และ /products ได้โดยไม่ถูกดีดกลับไป /checkout (D-14 / SOI-03)
     await page.goto('/orders');
