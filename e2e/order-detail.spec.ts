@@ -16,6 +16,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 test.describe('page-order-detail', () => {
+  // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf805cbb95fd45e1a7e162
   test('E2E-3 (AC-13) new P1 price reaches the cart but the existing order keeps 450', async ({ page }) => {
     // Given: cus_prime has P1 in the cart at 450, added before the price change
     await page.goto('/login');
@@ -89,6 +90,7 @@ test.describe('page-order-detail', () => {
     await expect(page.getByTestId('order-line-P1').getByTestId('order-line-unit-price')).toHaveAttribute('data-value', '450');
   });
 
+  // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a5a827ff6268917965
   test('E2E-4 (AC-15) another customer opening the order gets ORDER_NOT_FOUND', async ({ page }) => {
     // Given: cus_normal has an order with orderId = X
     await page.goto('/login');

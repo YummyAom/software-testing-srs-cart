@@ -36,6 +36,7 @@ const testCases: TestCase[] = [
   { weightTier: 'medium', zone: 'remote',    speed: 'standard', memberTier: 'normal', expected: 120 },
 ];
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf8050a333faec07aef4e7
 describe('calculateShippingFee - Pairwise', () => {
   test.each(testCases)(
     'fee($weightTier, $zone, $speed, $memberTier) = $expected',

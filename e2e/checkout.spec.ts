@@ -14,6 +14,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 test.describe('page-checkout', () => {
+  // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf807a8c68c79c1c87f1f1
   test('E2E-1 (AC-11a) checkout creates a pending order and reserves P2 stock', async ({ page }) => {
     await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
@@ -50,6 +51,7 @@ test.describe('page-checkout', () => {
     await expect(page.getByTestId('product-row-P2')).toHaveCount(0);
   });
 
+  // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80078d4ae456949e03cf
   test('E2E-2 (AC-12) cancel checkout cancels the order, returns stock and keeps the cart', async ({ page }) => {
     await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
@@ -95,6 +97,7 @@ test.describe('page-checkout', () => {
     await expect(page.getByTestId(`order-row-${orderId}`).getByTestId('order-status')).toHaveAttribute('data-status', 'cancelled');
   });
 
+  // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a599d0d9a2e3884eb9
   test('E2E-5 (AC-18a) pay success goes to the success page', async ({ page }) => {
     await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');

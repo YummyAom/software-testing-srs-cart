@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { validateCheckout } from '@cart/domain';
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf80e48b82c78aa5e7993e
 describe('validateCheckout - ECP Weak Robust', () => {
   const ready = { productId: 'P1', quantity: 1, available: true, availableStock: 20 };
   const closed = { productId: 'P1', quantity: 1, available: false, availableStock: 20 };
