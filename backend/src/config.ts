@@ -16,7 +16,9 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const port = Number(portText);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid API_PORT');
   const url = new URL(required('NEXT_PUBLIC_SUPABASE_URL'));
-  if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+  const isLocalHost = url.hostname === '127.0.0.1' || url.hostname === 'localhost';
+  if (!(url.protocol === 'https:' || (url.protocol === 'http:' && isLocalHost))
+    || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
     throw new Error('Configure an HTTPS Supabase project URL');
   }
   const dbUrl = new URL(required('SUPABASE_DB_URL'));

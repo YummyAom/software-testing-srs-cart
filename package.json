@@ -17,7 +17,13 @@
     "dev": "npm run dev --workspace @cart/api",
     "start": "npm run start --workspace @cart/api",
     "typecheck": "tsc --project tsconfig.json",
-    "build": "tsc --build tsconfig.build.json"
+    "build": "tsc --build tsconfig.build.json",
+    "db:local:reset": "npx --yes supabase@2.117.0 db reset --local",
+    "db:local:seed": "node --env-file-if-exists=backend/.env.test backend/scripts/local-supabase-seed.mjs",
+    "dev:test": "npm exec --workspace @cart/api -- tsx watch --env-file=.env.test src/index.ts",
+    "e2e:setup": "node scripts/local-e2e.mjs setup",
+    "e2e": "node scripts/local-e2e.mjs run",
+    "e2e:stop": "node scripts/local-e2e.mjs stop"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

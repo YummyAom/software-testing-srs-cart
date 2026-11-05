@@ -15,3 +15,15 @@ After deploying the new API, remove the old cart and order RPCs and revoke Data 
 `POST /cart/checkout` still accepts `{ "zone": "inCity", "speed": "standard" }`. One checked-out PostgreSQL connection and transaction reads/locks cart, product and coupon rows, calls the TypeScript domain functions, creates the order and lines, reserves stock, and updates customer state. Any error rolls the transaction back. `DELETE /cart/checkout` restores stock in its own transaction.
 
 Run `npm run build` from the repository root, then `npm run start --workspace @cart/api` after setting the environment variables.
+
+## Local Supabase for tests
+
+Runs the API against a throwaway Supabase stack on your machine instead of the shared team project. It needs Docker and Node 22, on Windows, Linux or macOS. The stack uses ports 55320-55329 (set in `supabase/config.toml`).
+
+`supabase/migrations/*_team_schema.sql` is a schema-only dump of the team database `public` schema.
+
+From the repo root, `npm run e2e:setup` starts the stack, creates `backend/.env.test` (git-ignored) and creates the seed accounts. `npm run e2e` then runs the E2E suite. See `e2e/README.md`.
+
+To run the API by itself against the same stack: `npm run dev:test`. To run the API tests, keep that server running and use `npm run test:api --workspace backend`.
+
+`npm run db:local:reset` rebuilds the local database from the migration. It also wipes local Auth users, so run `npm run db:local:seed` or `npm run e2e` afterwards. `npm run e2e:stop` stops the stack.
