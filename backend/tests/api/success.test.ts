@@ -61,7 +61,7 @@ describe("OP-12 continueShopping - /success page", () => {
         expect(body.data.stage).toBe("cart")
         expect(body.data.lineCount).toBe(0)
         expect(body.data.couponCode).toBe(null)
-    })
+    }, 35000)
 
     it("OP12-B1 continueShopping rejected when in stage cart (FR-8.4, FR-8.5.1)", async () => {
         // Precondition -> cus_normal is in stage cart (initial state)

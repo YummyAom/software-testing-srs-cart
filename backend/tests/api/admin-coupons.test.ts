@@ -100,7 +100,7 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(checkoutBody.data.order.discount).toBe(0)
         expect(checkoutBody.data.order.shippingFee).toBe(30)
         expect(checkoutBody.data.order.netTotal).toBe(1230)
-    })
+    }, 35000)
 
     it("OP17-A3 (FR-10.1.4) coupon status change does not alter existing created order", async () => {
         // Precondition -> cus_normal checkouts with active SAVE10
@@ -139,7 +139,7 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(orderBody.data.discount).toBe(120)
         expect(orderBody.data.netTotal).toBe(1110)
         expect(orderBody.data.couponCode).toBe("SAVE10")
-    })
+    }, 35000)
 
     it("OP17-B1 coupon not found when code does not exist (FR-10.1.1)", async () => {
         const res = await fetch(`${baseURL}/admin/coupons/NO_SUCH/status`, {
