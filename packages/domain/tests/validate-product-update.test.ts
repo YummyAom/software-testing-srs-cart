@@ -31,7 +31,7 @@ describe('validateProductUpdate (FR-9.1.1 Step 2)', () => {
       ['UT-PROD-17', 25000, 2.5, ['stock'], 'stock decimal'],
       ['UT-PROD-18', 25000, '10', ['stock'], 'stock string'],
       ['UT-PROD-19', 25000, null, ['stock'], 'stock null'],
-    ])('%s: price=%s, stock=%s => %j (%s)', (_id, price, stock, expected) => {
+    ])('%s: price=%s, stock=%s => %j (%s)', (_id, price, stock, expected, _note) => {
       const actual = validateProductUpdate({ price, stock });
       expect([...actual].sort()).toEqual([...expected].sort());
     });
@@ -43,7 +43,7 @@ describe('validateProductUpdate (FR-9.1.1 Step 2)', () => {
       ['UT-PROD-21', { price: 500 }, [], 'only price supplied and valid'],
       ['UT-PROD-22', { stock: 10 }, [], 'only stock supplied and valid'],
       ['UT-PROD-23', { price: 0 }, ['price'], 'only price supplied and invalid'],
-    ])('%s: input=%j => %j (%s)', (_id, input, expected) => {
+    ])('%s: input=%j => %j (%s)', (_id, input, expected, _note) => {
       const actual = validateProductUpdate(input);
       expect([...actual].sort()).toEqual([...expected].sort());
     });
