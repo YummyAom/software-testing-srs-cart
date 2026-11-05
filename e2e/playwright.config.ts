@@ -16,8 +16,12 @@ for (const name of ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_DB_URL']) {
   const { hostname } = new URL(process.env[name] ?? 'http://missing.invalid');
   if (hostname !== '127.0.0.1' && hostname !== 'localhost') throw new Error(`${name} must point at this machine`);
 }
-// The frontend always calls port 3001. On another port the reset would hit this API while the UI hit whatever owns 3001.
-if (process.env.API_PORT !== '3001') throw new Error('E2E needs API_PORT=3001');
+
+// `npm run e2e` picks free ports, starts both servers itself and passes the ports here,
+// so the frontend always calls the API of this run.
+const apiPort = process.env.API_PORT ?? '3001';
+const frontendPort = process.env.E2E_PORT ?? '5173';
+const frontendUrl = `http://localhost:${frontendPort}`;
 
 export default defineConfig({
   testDir: '.',
@@ -32,7 +36,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
+    baseURL: frontendUrl,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -40,20 +44,22 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   // reuseExistingServer stays false: a server already on these ports could be connected to the shared database.
-  webServer: [
+  webServer: process.env.E2E_SERVERS_RUNNING ? undefined : [
     {
       name: 'API',
       command: 'npm exec --workspace @cart/api -- tsx --env-file=.env.test src/index.ts',
       cwd: repoRoot,
-      url: 'http://127.0.0.1:3001/products',
+      url: `http://127.0.0.1:${apiPort}/products`,
+      env: { API_PORT: apiPort, UI_ORIGIN: frontendUrl },
       reuseExistingServer: false,
       timeout: 60_000,
     },
     {
       name: 'frontend',
-      command: 'npm run dev',
+      command: `npm run dev -- --port ${frontendPort} --strictPort`,
       cwd: frontendDir,
-      url: 'http://127.0.0.1:5173/login',
+      url: `http://127.0.0.1:${frontendPort}/login`,
+      env: { VITE_API_URL: `http://localhost:${apiPort}` },
       reuseExistingServer: false,
       timeout: 60_000,
     },

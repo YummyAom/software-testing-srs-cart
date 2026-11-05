@@ -24,6 +24,6 @@ Runs the API against a throwaway Supabase stack on your machine instead of the s
 
 From the repo root, `npm run e2e:setup` starts the stack, creates `backend/.env.test` (git-ignored) and creates the seed accounts. `npm run e2e` then runs the E2E suite. See `e2e/README.md`.
 
-To run the API by itself against the same stack: `npm run dev:test`. To run the API tests, keep that server running and use `npm run test:api --workspace backend`.
+`npm run test:api` starts the API on a free port, runs the API tests and stops it. To run the API by itself against the same stack: `npm run dev:test`.
 
 `npm run db:local:reset` rebuilds the local database from the migration. It also wipes local Auth users, so run `npm run db:local:seed` or `npm run e2e` afterwards. `npm run e2e:stop` stops the stack.

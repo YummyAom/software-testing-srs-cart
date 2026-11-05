@@ -19,7 +19,7 @@ test.describe('page-admin-coupons', () => {
     test.setTimeout(60000);
 
     // 1. Customer logs in, adds P2 x 1 (1200 >= minSpend 1000), and binds coupon SAVE10
-    await page.goto('http://localhost:5173/login');
+    await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
     await page.getByTestId('login-password').fill(PASSWORD.cus_normal);
     await page.getByTestId('login-submit').click();

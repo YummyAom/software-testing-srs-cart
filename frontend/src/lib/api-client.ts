@@ -105,7 +105,7 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 /** Fired after any call that can change the cart's line count, so the nav badge can refresh. */
 export const CART_CHANGED_EVENT = 'cart-changed';

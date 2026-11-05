@@ -17,7 +17,7 @@ test.beforeEach(async ({ request }) => {
 test.describe('page-login', () => {
   test('E2E-LOGIN-1 (FR-0.1.1, FR-0.1.2) login failure shows error and login success redirects to role-specific page', async ({ page }) => {
     // 1. Login with invalid credentials -> shows error banner and stays on /login
-    await page.goto('http://localhost:5173/login');
+    await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
     await page.getByTestId('login-password').fill('wrong_password_999');
     await page.getByTestId('login-submit').click();
