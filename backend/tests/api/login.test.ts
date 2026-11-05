@@ -21,7 +21,7 @@ describe("OP-1 login - Simplified Decision Table", () => {
             headers: JSON_HDR,
             body: JSON.stringify({
                 username: "cus_normal",
-                password: "Normal@123456",
+                password: process.env.SEED_PASSWORD_CUSTOMER_NORMAL,
             }),
         })
 

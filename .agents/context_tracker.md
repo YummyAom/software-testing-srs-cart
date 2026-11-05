@@ -1,20 +1,22 @@
-# Active Task: Create Test Design Specification Document (docs/login-success-admin-coupons-swtest.md)
+# Active Task: Completed API Tests for /success and /admin/coupons
 - Status: COMPLETED
 - Architecture & Decisions:
-  - Created `docs/login-success-admin-coupons-swtest.md` matching the teammate's Notion export format (`# Unit Test`, `# API Test`, `# E2E`) while embedding explicit sections for:
-    1. ดูจาก FR ไหน / Function อะไร / AC ไหน (Traceability)
-    2. ใช้เทคนิคอะไร และทำไม (Testing Technique & Rationale)
-    3. คิด Test Case ยังไง (Step-by-step Derivation)
+  - Created `backend/tests/api/success.test.ts` covering OP-12 (`OP12-A1`, `OP12-B1`, `OP12-B2`).
+  - Created `backend/tests/api/admin-coupons.test.ts` covering OP-17 & OP-18 (`OP17-A1`, `OP17-A2`, `OP17-A3`, `OP17-B1`, `OP17-B2`, `OP17-B3`, `OP18-A1`, `OP18-B1`).
+  - Synced HTTP 400 for `OPERATION_NOT_ALLOWED` in `docs/login-success-admin-coupons-swtest.md` with backend implementation.
+  - Verified TypeScript compilation.
 - Modified Files:
+  - backend/tests/api/success.test.ts
+  - backend/tests/api/admin-coupons.test.ts
   - docs/login-success-admin-coupons-swtest.md
-  - backend/tests/api/login.test.ts
   - .agents/context_tracker.md
-- Blocker / Assumptions: None.
-- Next Step: Implement remaining API tests (`OP-12 continueShopping`, `OP-17 setCouponStatus`, `OP-18 listCoupons`) and Playwright E2E tests (`e2e/login.spec.ts`, `e2e/success.spec.ts`, `e2e/admin-coupons.spec.ts`) when user requests.
+- Blocker / Assumptions: Integration tests require live test backend (`APP_ENV=test`) at localhost:3001.
+- Next Step: Proceed to E2E Tests (Playwright) for `/login`, `/success`, and `/admin/coupons`.
 
 ```mermaid
 flowchart TD
-    S1["1. Approve Test Design Document Plan"] --> S2["2. Create docs/login-success-admin-coupons-swtest.md"]
-    S2 --> S3["3. Update Walkthrough & Context Tracker"]
-    S3 --> S4["4. Ready for Next Test Implementation"]
+    S1["1. Implement backend/tests/api/success.test.ts"] --> S2["2. Implement backend/tests/api/admin-coupons.test.ts"]
+    S2 --> S3["3. Sync HTTP 400 status in docs/login-success-admin-coupons-swtest.md"]
+    S3 --> S4["4. Verify Typecheck & Compile Cleanly"]
+    S4 --> S5["5. Ready for E2E Playwright Implementation"]
 ```

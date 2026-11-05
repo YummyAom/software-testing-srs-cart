@@ -170,8 +170,8 @@ stateDiagram-v2
 | ID | Endpoint | เงื่อนไข | Precondition | Test data | Expected |
 | --- | --- | --- | --- | --- | --- |
 | OP12-A1 | POST /cart/continue | กลับสู่ตะกร้าหลังสั่งซื้อสำเร็จ (AC-18b, FR-6.4) | `cus_normal` เพิ่ม P1 × 1, กด checkout และ gateway เรียก `paySuccess` จนอยู่ stage `สำเร็จ` | header: token `cus_normal` | 200 + `data.stage = "cart"`, `data.lineCount = 0`, `data.couponCode = null` |
-| OP12-B1 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ตะกร้า` (FR-8.4, FR-8.5.1) | `cus_normal` อยู่ stage `ตะกร้า` (เริ่มต้น) | header: token `cus_normal` | 409 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `cart` |
-| OP12-B2 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ชำระเงิน` (FR-8.4, FR-8.5.1) | `cus_normal` เพิ่ม P1 × 1 แล้วกด checkout จนอยู่ stage `ชำระเงิน` | header: token `cus_normal` | 409 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `checkout` |
+| OP12-B1 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ตะกร้า` (FR-8.4, FR-8.5.1) | `cus_normal` อยู่ stage `ตะกร้า` (เริ่มต้น) | header: token `cus_normal` | 400 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `cart` |
+| OP12-B2 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ชำระเงิน` (FR-8.4, FR-8.5.1) | `cus_normal` เพิ่ม P1 × 1 แล้วกด checkout จนอยู่ stage `ชำระเงิน` | header: token `cus_normal` | 400 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `checkout` |
 
 ---
 
