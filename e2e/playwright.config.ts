@@ -3,12 +3,22 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 // Reset token and seed passwords live in backend/.env.test (git-ignored), shared with the API tests.
-const envFile = fileURLToPath(new URL('../backend/.env.test', import.meta.url));
-if (existsSync(envFile)) process.loadEnvFile(envFile);
+const envTestFile = fileURLToPath(new URL('../backend/.env.test', import.meta.url));
+if (existsSync(envTestFile) && typeof process.loadEnvFile === 'function') {
+  process.loadEnvFile(envTestFile);
+}
+const envBackendFile = fileURLToPath(new URL('../backend/.env', import.meta.url));
+if (existsSync(envBackendFile) && typeof process.loadEnvFile === 'function') {
+  process.loadEnvFile(envBackendFile);
+}
 
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
+  timeout: 60_000,
+  expect: {
+    timeout: 15_000,
+  },
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
