@@ -24,29 +24,37 @@ export default function AdminProductsPage() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [message, setMessage] = useState<PageMessage | null>(null)
 
-  const loadProducts = async () => {
-    if (!accessToken) return
-    try {
-      setLoading(true)
-      const data = await getProductsApi(accessToken)
-      setProducts(data)
-      const prices: Record<string, number> = {}
-      const stocks: Record<string, number> = {}
-      for (const p of data) {
-        prices[p.productId] = p.price
-        stocks[p.productId] = p.availableStock
-      }
-      setDraftPrices(prices)
-      setDraftStocks(stocks)
-    } catch (err: any) {
-      setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลสินค้าได้", code: errorCode(err) })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    loadProducts()
+    if (!accessToken) return
+    const token = accessToken
+    // StrictMode runs this effect twice on the dev server. Only the latest load may fill the page:
+    // a late response from an older load would reset the price and stock after they have been typed.
+    let stale = false
+    async function load() {
+      try {
+        setLoading(true)
+        const data = await getProductsApi(token)
+        if (stale) return
+        setProducts(data)
+        const prices: Record<string, number> = {}
+        const stocks: Record<string, number> = {}
+        for (const p of data) {
+          prices[p.productId] = p.price
+          stocks[p.productId] = p.availableStock
+        }
+        setDraftPrices(prices)
+        setDraftStocks(stocks)
+      } catch (err: any) {
+        if (stale) return
+        setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดข้อมูลสินค้าได้", code: errorCode(err) })
+      } finally {
+        if (!stale) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      stale = true
+    }
   }, [accessToken])
 
   const handleSave = async (product: Product) => {

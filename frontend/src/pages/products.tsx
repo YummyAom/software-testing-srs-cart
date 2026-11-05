@@ -19,10 +19,14 @@ export default function ProductsPage() {
   const [message, setMessage] = useState<PageMessage | null>(null)
 
   useEffect(() => {
+    // StrictMode runs this effect twice on the dev server. Only the latest load may fill the page:
+    // a late response from an older load would reset the quantity after it has been typed.
+    let stale = false
     async function load() {
       try {
         setLoading(true)
         const data = await getProductsApi(accessToken || undefined)
+        if (stale) return
         setProducts(data)
         const initialQtys: Record<string, number> = {}
         for (const p of data) {
@@ -30,12 +34,16 @@ export default function ProductsPage() {
         }
         setQuantities(initialQtys)
       } catch (err: any) {
+        if (stale) return
         setMessage({ kind: "error", text: err.message || "ไม่สามารถโหลดรายการสินค้าได้", code: errorCode(err) })
       } finally {
-        setLoading(false)
+        if (!stale) setLoading(false)
       }
     }
     load()
+    return () => {
+      stale = true
+    }
   }, [accessToken])
 
   const handleQtyChange = (productId: string, val: number) => {
