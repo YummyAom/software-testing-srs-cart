@@ -18,7 +18,7 @@ test.describe('page-success', () => {
     test.setTimeout(60000);
 
     // 1. Login as cus_normal
-    await page.goto('http://localhost:5173/login');
+    await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
     await page.getByTestId('login-password').fill(PASSWORD.cus_normal);
     await page.getByTestId('login-submit').click();
@@ -76,7 +76,7 @@ test.describe('page-success', () => {
     test.setTimeout(60000);
 
     // 1. Setup: customer pays order and reaches stage success
-    await page.goto('http://localhost:5173/login');
+    await page.goto('/login');
     await page.getByTestId('login-username').fill('cus_normal');
     await page.getByTestId('login-password').fill(PASSWORD.cus_normal);
     await page.getByTestId('login-submit').click();
@@ -104,7 +104,7 @@ test.describe('page-success', () => {
     await expect(page.getByTestId('page-success')).toBeVisible();
 
     // 2. Try navigating to /cart directly while in stage success
-    await page.goto('http://localhost:5173/cart');
+    await page.goto('/cart');
     await expect(page.getByTestId('page-success')).toBeVisible();
   });
 });
