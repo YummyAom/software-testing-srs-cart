@@ -40,7 +40,7 @@ describe('validateQuantityChange (FR-2.1–2.6)', () => {
       ['UT-QTY-12', 'update', 9, 'OK', 'max - 1'],
       ['UT-QTY-13', 'update', 10, 'OK', 'max'],
       ['UT-QTY-14', 'update', 11, 'QTY_OUT_OF_RANGE', 'max + 1'],
-    ] as const)('%s: operation=%s quantity=%d => %s (%s)', (_id, operation, quantity, expected) => {
+    ] as const)('%s: operation=%s quantity=%d => %s (%s)', (_id, operation, quantity, expected, _note) => {
       const base = operation === 'add' ? defaultAdd : defaultUpdate;
       expect(validateQuantityChange({ ...base, quantity })).toBe(expected);
     });
@@ -53,7 +53,7 @@ describe('validateQuantityChange (FR-2.1–2.6)', () => {
       ['UT-QTY-17', 'add', null, 'null'],
       ['UT-QTY-18', 'add', true, 'boolean'],
       ['UT-QTY-19', 'update', 1.5, 'decimal'],
-    ])('%s: operation=%s quantity=%s (%s) => VALIDATION_ERROR', (_id, operation, quantity) => {
+    ])('%s: operation=%s quantity=%s (%s) => VALIDATION_ERROR', (_id, operation, quantity, _note) => {
       const base = operation === 'add' ? defaultAdd : defaultUpdate;
       expect(validateQuantityChange({ ...base, quantity })).toBe('VALIDATION_ERROR');
     });
@@ -64,7 +64,7 @@ describe('validateQuantityChange (FR-2.1–2.6)', () => {
       ['UT-QTY-20', 8, 1, 'OK', 'total = 9'],
       ['UT-QTY-21', 8, 2, 'OK', 'total = 10 (max)'],
       ['UT-QTY-22', 8, 3, 'QTY_OUT_OF_RANGE', 'total = 11 (max + 1, AC-2)'],
-    ] as const)('%s: currentQtyInCart=%d + quantity=%d => %s (%s)', (_id, currentQtyInCart, quantity, expected) => {
+    ] as const)('%s: currentQtyInCart=%d + quantity=%d => %s (%s)', (_id, currentQtyInCart, quantity, expected, _note) => {
       expect(validateQuantityChange({ ...defaultAdd, currentQtyInCart, quantity })).toBe(expected);
     });
   });
@@ -75,7 +75,7 @@ describe('validateQuantityChange (FR-2.1–2.6)', () => {
       ['UT-QTY-24', 'add', 2, 2, 3, 'INSUFFICIENT_STOCK', 'add: 2 + 2 = 4 > stock (AC-3)'],
       ['UT-QTY-25', 'update', 3, 3, 3, 'OK', 'update: new 3 == stock'],
       ['UT-QTY-26', 'update', 3, 4, 3, 'INSUFFICIENT_STOCK', 'update: new 4 > stock'],
-    ] as const)('%s: op=%s current=%d qty=%d stock=%d => %s (%s)', (_id, operation, currentQtyInCart, quantity, availableStock, expected) => {
+    ] as const)('%s: op=%s current=%d qty=%d stock=%d => %s (%s)', (_id, operation, currentQtyInCart, quantity, availableStock, expected, _note) => {
       const base = operation === 'add' ? defaultAdd : defaultUpdate;
       expect(validateQuantityChange({ ...base, currentQtyInCart, quantity, availableStock })).toBe(expected);
     });
@@ -107,7 +107,7 @@ describe('validateQuantityChange (FR-2.1–2.6)', () => {
       ['UT-QTY-35', 'add', { available: false, currentQtyInCart: 8, quantity: 3 }, 'PRODUCT_UNAVAILABLE', 'step 4 beats step 5'],
       ['UT-QTY-36', 'add', { currentQtyInCart: 8, quantity: 3, availableStock: 5 }, 'QTY_OUT_OF_RANGE', 'step 5 beats step 6'],
       ['UT-QTY-37', 'update', { inCart: false, available: false }, 'ITEM_NOT_IN_CART', 'step 3 beats step 4'],
-    ] as const)('%s: op=%s overrides=%j => %s (%s)', (_id, operation, override, expected) => {
+    ] as const)('%s: op=%s overrides=%j => %s (%s)', (_id, operation, override, expected, _note) => {
       const base = operation === 'add' ? defaultAdd : defaultUpdate;
       expect(validateQuantityChange({ ...base, ...override })).toBe(expected);
     });
