@@ -72,3 +72,6 @@ coverage/
 .tsbuildinfo
 .parcel-cache
 .turbo/
+
+#Nat's Context Agents เผื่อถ้าใช้กับ Context Agents ร่วมกัน เดี๋ยวสับสนกัน
+.agents\context_tracker.md
