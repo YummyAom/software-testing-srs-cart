@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeAll, beforeEach } from "vitest"
 
 const PORT = process.env.API_PORT ?? 3001
 const baseURL = `http://localhost:${PORT}`
@@ -14,8 +14,18 @@ async function loginAs(username: string, password: string | undefined) {
         body: JSON.stringify({ username, password }),
     })
     const body: any = await res.json()
+    if (!res.ok || !body?.data?.accessToken) {
+        throw new Error(`login as ${username} failed: ${res.status} ${JSON.stringify(body)}`)
+    }
     return { Authorization: `Bearer ${body.data.accessToken}` }
 }
+
+// login once per file: logging in for every test hits the Supabase Auth rate limit.
+// /test/reset keeps app_users, so these tokens stay valid across resets.
+beforeAll(async () => {
+    NORMAL = await loginAs("cus_normal", process.env.SEED_PASSWORD_CUSTOMER_NORMAL)
+    ADMIN = await loginAs("admin01", process.env.SEED_PASSWORD_ADMIN)
+})
 
 beforeEach(async () => {
     // only the APP_ENV=test server has /test/reset, so a 404 here means the API is on the shared DB: stop before writing anything
@@ -24,9 +34,6 @@ beforeEach(async () => {
         headers: { "x-test-reset-token": process.env.TEST_RESET_TOKEN ?? "" },
     })
     expect(reset.status).toBe(200)
-
-    NORMAL = await loginAs("cus_normal", process.env.SEED_PASSWORD_CUSTOMER_NORMAL)
-    ADMIN = await loginAs("admin01", process.env.SEED_PASSWORD_ADMIN)
 })
 
 // =============================================================================
