@@ -5,7 +5,7 @@ import { test, expect, type Page, type Request } from '@playwright/test';
 
 const API_URL = `http://localhost:${process.env.API_PORT ?? '3001'}`;
 const PASSWORD = {
-  cus_normal: process.env.SEED_PASSWORD_CUSTOMER_NORMAL ?? '',
+  cus_normal: process.env.SEED_PASSWORD_CUSTOMER_NORMAL ?? '',                  
   cus_prime: process.env.SEED_PASSWORD_CUSTOMER_PRIME ?? '',
   admin01: process.env.SEED_PASSWORD_ADMIN ?? '',
 };
@@ -84,6 +84,24 @@ const line = (page: Page, productId: string) => page.getByTestId(`cart-line-${pr
 async function applyCoupon(page: Page, code: string) {
   await page.getByTestId('coupon-input').fill(code);
   await page.getByTestId('coupon-apply').click();
+}
+
+/** Press checkout on /cart and return the API answer (status + body) of POST /cart/checkout. */
+async function pressCheckout(page: Page) {
+  const answered = page.waitForResponse(
+    (res) => res.url().endsWith('/cart/checkout') && res.request().method() === 'POST',
+  );
+  await page.getByTestId('checkout-button').click();
+  const res = await answered;
+  return { status: res.status(), body: await res.json() };
+}
+
+/** FR-0.7: a rejected checkout keeps the customer at stage cart with the cart unchanged. */
+async function expectStillInCart(page: Page, productId: string, quantity: number, subtotal: number) {
+  await expect(page).toHaveURL(/\/cart$/);
+  await expect(page.getByTestId('page-cart')).toBeVisible();
+  await expect(line(page, productId).getByTestId('cart-line-qty')).toHaveAttribute('data-value', String(quantity));
+  await expect(page.getByTestId('cart-subtotal')).toHaveAttribute('data-value', String(subtotal));
 }
 
 async function updateQtyByInput(page: Page, productId: string, quantity: number) {
@@ -275,6 +293,96 @@ test.describe('page-cart', () => {
       await expect(page).toHaveURL(/\/checkout$/);
       await expect(page.getByTestId('page-checkout')).toBeVisible();
       await expect(page.getByTestId('checkout-order-id')).not.toBeEmpty();
+    });
+  });
+
+  test('E2E-CART-7 (FR-5.2.1, FR-0.7, AC-9) checkout over 20,000 g is rejected with WEIGHT_LIMIT_EXCEEDED', async ({ page }) => {
+    // P3 x 3 = 24,000 g (stock 5, so addItem itself is accepted)
+    await login(page, 'cus_normal');
+    await addFromProducts(page, 'P3', 3);
+    await openCart(page);
+    await expect(page.getByTestId('zone-select')).toHaveValue('inCity');
+    await expect(page.getByTestId('speed-select')).toHaveValue('standard');
+
+    await test.step('TC-17 pressCheckout(inCity, standard) → WEIGHT_LIMIT_EXCEEDED, still at stage cart, cart unchanged', async () => {
+      const { status, body } = await pressCheckout(page);
+      expect(status).toBe(400);
+      expect(body.error.code).toBe('WEIGHT_LIMIT_EXCEEDED');
+
+      const message = page.getByTestId('app-message');
+      await expect(message).toHaveAttribute('data-kind', 'error');
+      await expect(message).toHaveAttribute('data-code', 'WEIGHT_LIMIT_EXCEEDED');
+      await expectStillInCart(page, 'P3', 3, 45000);
+    });
+  });
+
+  test('E2E-CART-8 (FR-5.2.1, FR-9.3.4, FR-0.7, AC-10) checkout with a line the admin turned offSale is rejected with ITEMS_UNAVAILABLE', async ({ page, browser }) => {
+    await login(page, 'cus_normal');
+    await addFromProducts(page, 'P1', 1);
+
+    await test.step('Precondition: admin01 calls setProductStatus(P1, offSale)', async () => {
+      const adminContext = await browser.newContext();
+      try {
+        const admin = await adminContext.newPage();
+        await login(admin, 'admin01');
+        const row = admin.getByTestId('admin-product-row-P1');
+        await row.getByTestId('admin-product-toggle-status').click();
+        await expect(row.getByTestId('admin-product-status')).toHaveAttribute('data-status', 'offSale');
+      } finally {
+        await adminContext.close();
+      }
+    });
+
+    await openCart(page);
+    await expect(line(page, 'P1')).toBeVisible();
+
+    await test.step('TC-18 pressCheckout(inCity, standard) → ITEMS_UNAVAILABLE [P1], still at stage cart, cart unchanged', async () => {
+      const { status, body } = await pressCheckout(page);
+      expect(status).toBe(400);
+      expect(body.error.code).toBe('ITEMS_UNAVAILABLE');
+      expect(body.error.details.productIds).toEqual(['P1']);
+
+      const message = page.getByTestId('app-message');
+      await expect(message).toHaveAttribute('data-kind', 'error');
+      await expect(message).toHaveAttribute('data-code', 'ITEMS_UNAVAILABLE');
+      await expectStillInCart(page, 'P1', 1, 450);
+    });
+  });
+
+  test('E2E-CART-9 (FR-5.2.1, FR-5.3.7, FR-0.7, AC-11b) stock reserved by another customer makes checkout fail with ITEMS_UNAVAILABLE', async ({ page, browser }) => {
+    // cus_prime adds P2 x 1 before cus_normal reserves all 3 of P2
+    await login(page, 'cus_prime');
+    await addFromProducts(page, 'P2', 1);
+
+    await test.step('Precondition: cus_normal checks out P2 x 3 (order awaiting payment, P2 available stock = 0)', async () => {
+      const normalContext = await browser.newContext();
+      try {
+        const normal = await normalContext.newPage();
+        await login(normal, 'cus_normal');
+        await addFromProducts(normal, 'P2', 3);
+        await openCart(normal);
+        const { status } = await pressCheckout(normal);
+        expect(status).toBe(201); // order created
+        await expect(normal.getByTestId('page-checkout')).toBeVisible();
+        await expect(normal.getByTestId('checkout-order-id')).not.toBeEmpty();
+      } finally {
+        await normalContext.close();
+      }
+    });
+
+    await openCart(page);
+    await expect(line(page, 'P2')).toBeVisible();
+
+    await test.step('TC-19 cus_prime pressCheckout(inCity, standard) → ITEMS_UNAVAILABLE [P2], still at stage cart, cart unchanged', async () => {
+      const { status, body } = await pressCheckout(page);
+      expect(status).toBe(400);
+      expect(body.error.code).toBe('ITEMS_UNAVAILABLE');
+      expect(body.error.details.productIds).toEqual(['P2']);
+
+      const message = page.getByTestId('app-message');
+      await expect(message).toHaveAttribute('data-kind', 'error');
+      await expect(message).toHaveAttribute('data-code', 'ITEMS_UNAVAILABLE');
+      await expectStillInCart(page, 'P2', 1, 1200);
     });
   });
 });
