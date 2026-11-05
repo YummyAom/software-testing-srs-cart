@@ -39,7 +39,9 @@ beforeEach(async () => {
     expect(reset.status).toBe(200)
 })
 
+// Notion ECP: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80f5ab0ded3c0bb4b634
 describe("OP-14 viewOrder - Happy Path", () => {
+    // Notion TC 1: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-A1 view own order shows the saved snapshot", async () => {
         // Precondition -> cus_normal checkout P1 x 2 (900 baht, 600 g = light, inCity standard normal = 30)
         await fetch(`${baseURL}/cart/items`, {
@@ -76,6 +78,7 @@ describe("OP-14 viewOrder - Happy Path", () => {
         expect(body.data.couponCode).toBe(null)
     })
 
+    // Notion TC 2: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-A2 (AC-13) order keeps old price after admin changes it", async () => {
         // Precondition -> cus_normal checkout P1 x 1 (price 450), then admin sets P1 price = 500
         await fetch(`${baseURL}/cart/items`, {
@@ -113,6 +116,7 @@ describe("OP-14 viewOrder - Happy Path", () => {
         expect(p1.unitPrice).toBe(500)
     })
 
+    // Notion TC 3: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-A3 (FR-8.5.2, FR-5.3.6) order is readable at stage cart and ignores later cart edits", async () => {
         // Precondition -> cus_normal checkout P1 x 2, cancel, then add P2 x 1 to the cart
         await fetch(`${baseURL}/cart/items`, {
@@ -154,6 +158,7 @@ describe("OP-14 viewOrder - Happy Path", () => {
         expect(body.data.subtotal).toBe(900)
     })
 
+    // Notion TC 4: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-A4 (FR-8.5.2, FR-5.3.6) order is readable at stage success and keeps coupon after admin disables it", async () => {
         // Precondition -> cus_prime P2 x 1 + SAVE10 checkout (1,200 - 120 + shipping 0), pay success, admin disables SAVE10
         await fetch(`${baseURL}/cart/items`, {
@@ -204,6 +209,7 @@ describe("OP-14 viewOrder - Happy Path", () => {
 })
 
 describe("OP-14 viewOrder - AC-15", () => {
+    // Notion TC 5: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-B1 (AC-15) another customer cannot view the order", async () => {
         // Precondition -> cus_normal has order X
         await fetch(`${baseURL}/cart/items`, {
@@ -231,6 +237,7 @@ describe("OP-14 viewOrder - AC-15", () => {
 })
 
 describe("OP-14 viewOrder - Negative", () => {
+    // Notion TC 6: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-B2 (FR-0.5.2) order that does not exist gives the same error as another customer's order", async () => {
         // Precondition -> cus_normal has order X, cus_prime gets the error for another customer's order
         await fetch(`${baseURL}/cart/items`, {
@@ -262,6 +269,7 @@ describe("OP-14 viewOrder - Negative", () => {
         expect(body.error.message).toBe(otherBody.error.message)
     })
 
+    // Notion TC 7: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-B3 (FR-0.2) no token returns 401 AUTH_REQUIRED", async () => {
         // Precondition -> order X exists, so the missing token is the only fault
         await fetch(`${baseURL}/cart/items`, {
@@ -286,6 +294,7 @@ describe("OP-14 viewOrder - Negative", () => {
         expect(body.error.code).toBe("AUTH_REQUIRED")
     })
 
+    // Notion TC 8: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80b0bd62c5ea1c5c963c
     it("OP14-B4 (FR-0.3.1) admin token returns 403 AUTH_FORBIDDEN", async () => {
         // Precondition -> order X exists, so the role is the only fault
         await fetch(`${baseURL}/cart/items`, {

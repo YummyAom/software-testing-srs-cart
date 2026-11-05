@@ -38,7 +38,9 @@ beforeEach(async () => {
     expect(reset.status).toBe(200)
 })
 
+// Notion FSM: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80efaacefe461d6cd935
 describe("OP-8 pressCheckout - Happy Path", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP8-A1 (AC-11a) checkout creates pending order and reserves stock", async () => {
         // Precondition -> cus_normal P2 x 3 in cart (P2 stock 3)
         await fetch(`${baseURL}/cart/items`, {
@@ -68,6 +70,7 @@ describe("OP-8 pressCheckout - Happy Path", () => {
 })
 
 describe("OP-9 cancelCheckout - Happy Path", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP9-A1 (AC-12) cancel returns order, stock and cart", async () => {
         // Precondition -> cus_normal checkout P2 x 3 (P2 stock 0)
         await fetch(`${baseURL}/cart/items`, {
@@ -102,6 +105,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
         expect(p2.availableStock).toBe(3)
     })
 
+    // Notion FR-7.2.1: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf80b78a64c68e5cef33be
     it("OP9-A2 coupon used in the order stays on the cart", async () => {
         // Precondition -> cus_prime P2 x 1 (1,200 >= minSpend 1,000) + SAVE10, checkout uses the coupon
         await fetch(`${baseURL}/cart/items`, {
@@ -131,6 +135,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
         expect(body.data.cart.couponCode).toBe("SAVE10")
     })
 
+    // Notion FR-7.2.2: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf80d1beb6c5b0ddc256b5
     it("OP9-A3 coupon removed at checkout is not bound again", async () => {
         // Precondition -> cus_prime P1 x 2 (900 < minSpend 1,000) + SAVE10, checkout removes the coupon
         await fetch(`${baseURL}/cart/items`, {
@@ -164,6 +169,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
         expect(body.data.cart.couponCode).toBe(null)
     })
 
+    // Notion FR-7.3.1: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf8039b131d04a4e860ced
     it("OP9-A4 cart can be edited after cancel", async () => {
         // Precondition -> cus_normal checkout P2 x 3 then cancel
         await fetch(`${baseURL}/cart/items`, {
@@ -193,6 +199,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
         expect(body.data.lineCount).toBe(2)
     })
 
+    // Notion FR-7.3.2: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf809ea8dfcd1b758107e6
     it("OP9-A5 checkout again after cancel creates a new orderId", async () => {
         // Precondition -> cus_normal checkout P2 x 3 then cancel
         await fetch(`${baseURL}/cart/items`, {
@@ -225,6 +232,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
         expect(body.data.order.orderId).not.toBe(firstOrderId)
     })
 
+    // Notion FR-7.1.2: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf80e88152ef4306108b24
     it("OP9-A6 (FR-7.1.2) cancel adds quantity back onto the stock at that moment", async () => {
         // Precondition -> cus_normal checkout P2 x 3, then admin sets P2 stock = 9,999
         await fetch(`${baseURL}/cart/items`, {
@@ -264,6 +272,7 @@ describe("OP-9 cancelCheckout - Happy Path", () => {
 })
 
 describe("OP-9 cancelCheckout - Negative", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP9-B1 (FR-8.2, FR-0.7) cancel again at stage cart does not return stock twice", async () => {
         // Precondition -> cus_normal checkout P2 x 3 then cancel (stage cart, P2 stock 3)
         await fetch(`${baseURL}/cart/items`, {
@@ -305,6 +314,7 @@ describe("OP-9 cancelCheckout - Negative", () => {
         expect(p2.availableStock).toBe(3)
     })
 
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP9-B2 (FR-8.2, FR-0.7) cancel at stage success is rejected", async () => {
         // Precondition -> cus_normal checkout P1 x 1 then pay success (stage success, P1 stock 19)
         await fetch(`${baseURL}/cart/items`, {
@@ -386,6 +396,7 @@ describe("OP-9 cancelCheckout - Negative", () => {
 })
 
 describe("OP-10 paySuccess - Happy Path", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP10-A1 (AC-18a) pay success clears cart and moves to stage success", async () => {
         // Precondition -> stage cart, cus_normal P2 x 1 (1,200 >= minSpend 1,000) + SAVE10, checkout uses the coupon
         const startRes = await fetch(`${baseURL}/cart`, { headers: NORMAL })
@@ -439,6 +450,7 @@ describe("OP-10 paySuccess - Happy Path", () => {
 })
 
 describe("OP-10 paySuccess - Negative", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP10-B1 (FR-8.2, FR-8.3, FR-0.7) pay a cancelled order at stage cart is rejected", async () => {
         // Precondition -> cus_normal checkout P2 x 3 then cancel
         await fetch(`${baseURL}/cart/items`, {
@@ -486,6 +498,7 @@ describe("OP-10 paySuccess - Negative", () => {
         expect(p2.availableStock).toBe(3)
     })
 
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP10-B2 (FR-8.2, FR-8.3) pay again at stage success is rejected", async () => {
         // Precondition -> cus_normal checkout P1 x 1 then pay success
         await fetch(`${baseURL}/cart/items`, {
@@ -533,6 +546,7 @@ describe("OP-10 paySuccess - Negative", () => {
 })
 
 describe("OP-11 payFail - Happy Path", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP11-A1 pay fail keeps stage, order and stock reservation", async () => {
         // Precondition -> cus_normal checkout P2 x 3 (P2 stock 0)
         await fetch(`${baseURL}/cart/items`, {
@@ -568,6 +582,7 @@ describe("OP-11 payFail - Happy Path", () => {
         expect(p2.availableStock).toBe(0)
     })
 
+    // Notion FR-6.3: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40e51d114daf8061a402d8156b36a663
     it("OP11-A2 (FR-6.3) pay again after 3 fails succeeds", async () => {
         // Precondition -> cus_normal checkout P1 x 1 then gateway payFail 3 times
         await fetch(`${baseURL}/cart/items`, {
@@ -607,6 +622,7 @@ describe("OP-11 payFail - Happy Path", () => {
 })
 
 describe("OP-11 payFail - Negative", () => {
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP11-B1 (FR-8.2, FR-8.3, FR-0.7) fail on a cancelled order at stage cart is rejected", async () => {
         // Precondition -> cus_normal checkout P2 x 3 then cancel
         await fetch(`${baseURL}/cart/items`, {
@@ -651,6 +667,7 @@ describe("OP-11 payFail - Negative", () => {
         expect(p2.availableStock).toBe(3)
     })
 
+    // Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40f51d114daf80a78504c8ba3edc9685
     it("OP11-B2 (FR-8.2, FR-8.3, FR-0.7) fail on a paid order at stage success is rejected", async () => {
         // Precondition -> cus_normal checkout P1 x 1 then pay success
         await fetch(`${baseURL}/cart/items`, {

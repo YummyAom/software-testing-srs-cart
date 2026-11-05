@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateSubtotal, calculateTotalWeight, calculateNetTotal, classifyWeight, calculateDiscount } from '@cart/domain';
 
 // more detail at https://nissorn.notion.site/nissorn-swtest
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf80cf866bee0d68cb7a98
 describe('calculateSubtotal - Weak Normal ECT', () => {
   it.each([
     [[], 0], //TC1
@@ -12,6 +13,7 @@ describe('calculateSubtotal - Weak Normal ECT', () => {
   });
 });
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf80a19943e94433c7a081
 describe('calculateTotalWeight', () => {
   it.each([
     [[], 0], //TC1
@@ -22,6 +24,7 @@ describe('calculateTotalWeight', () => {
   });
 });
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf8028a492de52007d2ea6
 describe('calculateNetTotal', () => {
   it.each([
     [0, 0, 0, 0], //TC1
@@ -31,6 +34,7 @@ describe('calculateNetTotal', () => {
   });
 });
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf8099883ff47680689122
 describe('classifyWeight - Normal(+ max+) BV', () => {
   it.each([
     [1, 'light'],
@@ -44,6 +48,7 @@ describe('classifyWeight - Normal(+ max+) BV', () => {
   });
 });
 
+// Notion: https://app.notion.com/p/Order-40d51d114daf80f48d71e5e7fc2f249e?source=copy_link#40d51d114daf8011901bd5fc710c8f94
 describe('calculateDiscount - Decision Table', () => {
   const inactive = { percent: 10, minSpend: 1000, active: false };
   const active = { percent: 10, minSpend: 1000, active: true };
