@@ -33,6 +33,25 @@ describe("OP-1 login - Simplified Decision Table", () => {
         expect(body.data.user.role).toBe("customer")
     })
 
+    it("OP1-A2 (Rule 1: T, T) login succeeds with valid admin credentials in admin role (FR-0.1.1)", async () => {
+        // Precondition -> seeded account admin01 exists
+        const res = await fetch(`${baseURL}/auth/login`, {
+            method: "POST",
+            headers: JSON_HDR,
+            body: JSON.stringify({
+                username: "admin01",
+                password: process.env.SEED_PASSWORD_ADMIN,
+            }),
+        })
+
+        expect(res.status).toBe(200)
+
+        const body: any = await res.json()
+        expect(typeof body.data.accessToken).toBe("string")
+        expect(body.data.user.username).toBe("admin01")
+        expect(body.data.user.role).toBe("admin")
+    })
+
     it("OP1-B1 (Rule 2: T, F) login rejects when username exists but password is wrong (FR-0.1.2)", async () => {
         // Precondition -> seeded account cus_normal exists, password does not match
         const res = await fetch(`${baseURL}/auth/login`, {
@@ -57,7 +76,7 @@ describe("OP-1 login - Simplified Decision Table", () => {
             headers: JSON_HDR,
             body: JSON.stringify({
                 username: "ghost_user_999",
-                password: "wrong_password_999",
+                password: process.env.SEED_PASSWORD_CUSTOMER_NORMAL,
             }),
         })
 

@@ -18,9 +18,9 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/products" element={<ProductsPage />} />
-        <Route path="/cart" element={<StageGuard page="cart"><CartPage /></StageGuard>} />
-        <Route path="/checkout" element={<StageGuard page="checkout"><CheckoutPage /></StageGuard>} />
-        <Route path="/success" element={<StageGuard page="success"><SuccessPage /></StageGuard>} />
+        <Route path="/cart" element={<StageGuard key="cart" page="cart"><CartPage /></StageGuard>} />
+        <Route path="/checkout" element={<StageGuard key="checkout" page="checkout"><CheckoutPage /></StageGuard>} />
+        <Route path="/success" element={<StageGuard key="success" page="success"><SuccessPage /></StageGuard>} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/admin/products" element={<AdminProductsPage />} />

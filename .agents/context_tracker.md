@@ -1,22 +1,23 @@
-# Active Task: Completed API Tests for /success and /admin/coupons
-- Status: COMPLETED
-- Architecture & Decisions:
-  - Created `backend/tests/api/success.test.ts` covering OP-12 (`OP12-A1`, `OP12-B1`, `OP12-B2`).
-  - Created `backend/tests/api/admin-coupons.test.ts` covering OP-17 & OP-18 (`OP17-A1`, `OP17-A2`, `OP17-A3`, `OP17-B1`, `OP17-B2`, `OP17-B3`, `OP18-A1`, `OP18-B1`).
-  - Synced HTTP 400 for `OPERATION_NOT_ALLOWED` in `docs/login-success-admin-coupons-swtest.md` with backend implementation.
-  - Verified TypeScript compilation.
-- Modified Files:
-  - backend/tests/api/success.test.ts
-  - backend/tests/api/admin-coupons.test.ts
-  - docs/login-success-admin-coupons-swtest.md
-  - .agents/context_tracker.md
-- Blocker / Assumptions: Integration tests require live test backend (`APP_ENV=test`) at localhost:3001.
-- Next Step: Proceed to E2E Tests (Playwright) for `/login`, `/success`, and `/admin/coupons`.
+# Active Task: Fix Checkout Page Notice Loss & StageGuard Re-render in admin-coupons.spec.ts
 
 ```mermaid
 flowchart TD
-    S1["1. Implement backend/tests/api/success.test.ts"] --> S2["2. Implement backend/tests/api/admin-coupons.test.ts"]
-    S2 --> S3["3. Sync HTTP 400 status in docs/login-success-admin-coupons-swtest.md"]
-    S3 --> S4["4. Verify Typecheck & Compile Cleanly"]
-    S4 --> S5["5. Ready for E2E Playwright Implementation"]
+    Step1["1. Customer clicks checkout on /cart"] --> Step2["2. POST /cart/checkout returns notice"]
+    Step2 --> Step3["3. Navigate to /checkout with location.state"]
+    Step3 --> Step4["4. StageGuard mounts fresh with key='checkout' and preserves state"]
+    Step4 --> Step5["5. CheckoutPage renders AppMessage notice immediately"]
 ```
+
+- Status: COMPLETED
+- Architecture & Decisions:
+  1. Identified that React Router was reusing the `<StageGuard>` instance across `/cart` -> `/checkout` without a key, causing `StageGuard` to initialize with stale `stage = "cart"`, redirect back to `/cart` and strip `location.state` (which contained the `COUPON_NOT_APPLICABLE` notice).
+  2. Added unique keys (`key="cart"`, `key="checkout"`, `key="success"`) in `App.tsx` and ensured `StageGuard` passes `state={location.state}` during any replace navigation.
+  3. Updated `CheckoutPage` to keep `message` in sync with `location.state` and render `message` during the loading order state so that the notice banner is visible without race conditions.
+  4. Added `await expect(page.getByTestId('checkout-order-id')).toBeVisible()` in `admin-coupons.spec.ts` to ensure snapshot synchronization.
+- Modified Files:
+  - `frontend/src/App.tsx`
+  - `frontend/src/components/stage-guard.tsx`
+  - `frontend/src/pages/checkout.tsx`
+  - `e2e/admin-coupons.spec.ts`
+- Blocker / Assumptions: None.
+- Next Step: Instruct user to re-run `admin-coupons.spec.ts`.

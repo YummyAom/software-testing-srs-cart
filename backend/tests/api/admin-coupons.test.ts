@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeAll, beforeEach } from "vitest"
 
 const PORT = process.env.API_PORT ?? 3001
 const baseURL = `http://localhost:${PORT}`
@@ -14,8 +14,18 @@ async function loginAs(username: string, password: string | undefined) {
         body: JSON.stringify({ username, password }),
     })
     const body: any = await res.json()
+    if (!res.ok || !body?.data?.accessToken) {
+        throw new Error(`login as ${username} failed: ${res.status} ${JSON.stringify(body)}`)
+    }
     return { Authorization: `Bearer ${body.data.accessToken}` }
 }
+
+// login once per file: logging in for every test hits the Supabase Auth rate limit.
+// /test/reset keeps app_users, so these tokens stay valid across resets.
+beforeAll(async () => {
+    NORMAL = await loginAs("cus_normal", process.env.SEED_PASSWORD_CUSTOMER_NORMAL)
+    ADMIN = await loginAs("admin01", process.env.SEED_PASSWORD_ADMIN)
+})
 
 beforeEach(async () => {
     const reset = await fetch(`${baseURL}/test/reset`, {
@@ -23,9 +33,6 @@ beforeEach(async () => {
         headers: { "x-test-reset-token": process.env.TEST_RESET_TOKEN ?? "" },
     })
     expect(reset.status).toBe(200)
-
-    NORMAL = await loginAs("cus_normal", process.env.SEED_PASSWORD_CUSTOMER_NORMAL)
-    ADMIN = await loginAs("admin01", process.env.SEED_PASSWORD_ADMIN)
 })
 
 describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
@@ -141,6 +148,25 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(orderBody.data.couponCode).toBe("SAVE10")
     }, 35000)
 
+    it("OP17-A4 (FR-10.1.2) admin re-enables coupon SAVE10 back to active", async () => {
+        await fetch(`${baseURL}/admin/coupons/SAVE10/status`, {
+            method: "POST",
+            headers: { ...ADMIN, ...JSON_HDR },
+            body: JSON.stringify({ status: "inactive" }),
+        })
+
+        const res = await fetch(`${baseURL}/admin/coupons/SAVE10/status`, {
+            method: "POST",
+            headers: { ...ADMIN, ...JSON_HDR },
+            body: JSON.stringify({ status: "active" }),
+        })
+
+        expect(res.status).toBe(200)
+        const body: any = await res.json()
+        const save10 = body.data.coupons.find((c: any) => c.code === "SAVE10")
+        expect(save10.status).toBe("active")
+    })
+
     it("OP17-B1 coupon not found when code does not exist (FR-10.1.1)", async () => {
         const res = await fetch(`${baseURL}/admin/coupons/NO_SUCH/status`, {
             method: "POST",
@@ -153,7 +179,7 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(body.error.code).toBe("COUPON_NOT_FOUND")
     })
 
-    it("OP17-B2 validation error when status is invalid (VALIDATION_ERROR)", async () => {
+    it("OP17-B2 [SOI-02] validation error when status is invalid enum (VALIDATION_ERROR)", async () => {
         const res = await fetch(`${baseURL}/admin/coupons/SAVE10/status`, {
             method: "POST",
             headers: { ...ADMIN, ...JSON_HDR },
@@ -175,6 +201,12 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(res.status).toBe(403)
         const body: any = await res.json()
         expect(body.error.code).toBe("AUTH_FORBIDDEN")
+
+        // Verify SAVE10 status remains active (FR-0.7)
+        const listRes = await fetch(`${baseURL}/admin/coupons`, { headers: ADMIN })
+        const listBody: any = await listRes.json()
+        const save10 = listBody.data.coupons.find((c: any) => c.code === "SAVE10")
+        expect(save10.status).toBe("active")
     })
 
     it("OP18-B1 customer cannot list admin coupons (FR-0.3.2)", async () => {
@@ -185,5 +217,25 @@ describe("OP-17 setCouponStatus & OP-18 listCoupons - /admin/coupons", () => {
         expect(res.status).toBe(403)
         const body: any = await res.json()
         expect(body.error.code).toBe("AUTH_FORBIDDEN")
+    })
+
+    it("OP17-B4 unauthenticated user cannot change coupon status (FR-0.2)", async () => {
+        const res = await fetch(`${baseURL}/admin/coupons/SAVE10/status`, {
+            method: "POST",
+            headers: JSON_HDR,
+            body: JSON.stringify({ status: "inactive" }),
+        })
+
+        expect(res.status).toBe(401)
+        const body: any = await res.json()
+        expect(body.error.code).toBe("AUTH_REQUIRED")
+    })
+
+    it("OP18-B2 unauthenticated user cannot list admin coupons (FR-0.2)", async () => {
+        const res = await fetch(`${baseURL}/admin/coupons`)
+
+        expect(res.status).toBe(401)
+        const body: any = await res.json()
+        expect(body.error.code).toBe("AUTH_REQUIRED")
     })
 })

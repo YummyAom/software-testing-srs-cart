@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { Navigate } from "react-router-dom"
+import { Navigate, useLocation } from "react-router-dom"
 import { useAuth } from "../context/auth-context"
 import { getAuthMeApi, type UserState } from "../lib/api-client"
 
@@ -17,6 +17,7 @@ const stagePaths: Record<Stage, string> = {
  */
 export function StageGuard({ page, children }: { page: Stage; children: ReactNode }) {
   const { accessToken, user } = useAuth()
+  const location = useLocation()
   const isCustomer = !!accessToken && user?.role === "customer"
   const [stage, setStage] = useState<Stage | null>(null)
   const [checked, setChecked] = useState(!isCustomer)
@@ -33,6 +34,6 @@ export function StageGuard({ page, children }: { page: Stage; children: ReactNod
   }, [accessToken, isCustomer, page])
 
   if (!checked) return null
-  if (stage && stage !== page) return <Navigate to={stagePaths[stage]} replace />
+  if (stage && stage !== page) return <Navigate to={stagePaths[stage]} state={location.state} replace />
   return <>{children}</>
 }

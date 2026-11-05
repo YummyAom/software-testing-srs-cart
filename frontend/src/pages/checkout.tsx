@@ -32,6 +32,13 @@ export default function CheckoutPage() {
   const { accessToken } = useAuth()
 
   useEffect(() => {
+    const notice = (location.state as { notice?: ApiMessage | null } | null)?.notice
+    if (notice) {
+      setMessage({ kind: "notice", text: notice.message, code: notice.code })
+    }
+  }, [location.state])
+
+  useEffect(() => {
     async function load() {
       if (!accessToken) return
       try {
@@ -104,7 +111,13 @@ export default function CheckoutPage() {
   if (loadingOrder) {
     return (
       <AppShell role="customer" activePage="checkout">
-        <PageScaffold pageTestId="page-checkout" title="ตรวจสอบคำสั่งซื้อ" message={null}>
+        <PageScaffold
+          pageTestId="page-checkout"
+          title="ตรวจสอบคำสั่งซื้อ"
+          message={message?.text ?? null}
+          messageKind={message?.kind}
+          messageCode={message?.code}
+        >
           <div style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>
             กำลังโหลดข้อมูลคำสั่งซื้อ...
           </div>

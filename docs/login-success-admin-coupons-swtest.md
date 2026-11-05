@@ -57,23 +57,32 @@ flowchart TD
      - `A3`: ส่วนลดสมาชิก = `floor(subtotal * 5 / 100)`, `source: 'member'`
      - `A4`: ส่วนลด = `0`, `source: 'none'`
 2. **ขั้นที่ 2 (แจกแจงกฎ $2^4 = 16$ Rules และยุบรวมกฎด้วย Don't Care `-`):**
-   - เมื่อ `C1, C2, C3` เป็นจริงทั้งหมด (`T, T, T`) ลูกค้าจะได้ส่วนลดคูปองเสมอโดยไม่สนว่าเป็นสมาชิก `prime` หรือ `normal` (`C4 = -`) $\rightarrow$ ยุบเหลือ **Rule 1**
-   - เมื่อมีคูปองแต่ถูก Admin ปิดใช้ (`C1 = T, C2 = F`) คูปองจะถูกถอดเสมอโดยไม่สนว่ายอดซื้อจะถึงขั้นต่ำหรือไม่ (`C3 = -`) $\rightarrow$ ยุบเหลือ **Rule 4** (สำหรับ `prime`) และ **Rule 5** (สำหรับ `normal`)
-   - เมื่อไม่มีคูปองผูกอยู่เลย (`C1 = F`) ค่าของ `C2` และ `C3` จะไม่มีความหมาย (`-`) $\rightarrow$ ยุบเหลือ **Rule 6** และ **Rule 7**
+   - เมื่อ `C1, C2, C3` เป็นจริงทั้งหมด (`T, T, T`) ลูกค้าจะได้ส่วนลดคูปองเสมอโดยไม่สนว่าเป็นสมาชิก `prime` หรือ `normal` (`C4 = -`) $\rightarrow$ ครอบคลุม 2 กฎย่อย ยุบเหลือ **Rule 1**
+   - เมื่อ `C1, C2` เป็นจริง แต่ยอดซื้อไม่ถึงขั้นต่ำ (`C3 = F`) คูปองจะถูกถอดและคิดส่วนลดสมาชิกตาม `C4`:
+     - ถ้า `C4 = T` (Prime) ได้ส่วนลดสมาชิก $\rightarrow$ ครอบคลุม 1 กฎย่อย เป็น **Rule 2**
+     - ถ้า `C4 = F` (Normal) ไม่ได้ส่วนลด $\rightarrow$ ครอบคลุม 1 กฎย่อย เป็น **Rule 3**
+   - เมื่อมีคูปองแต่ถูก Admin ปิดใช้ (`C1 = T, C2 = F`) คูปองจะถูกถอดเสมอโดยไม่สนว่ายอดซื้อจะถึงขั้นต่ำหรือไม่ (`C3 = -`):
+     - ถ้า `C4 = T` (Prime) ได้ส่วนลดสมาชิก $\rightarrow$ ครอบคลุม 2 กฎย่อย เป็น **Rule 4**
+     - ถ้า `C4 = F` (Normal) ไม่ได้ส่วนลด $\rightarrow$ ครอบคลุม 2 กฎย่อย เป็น **Rule 5**
+   - เมื่อไม่มีคูปองผูกอยู่เลย (`C1 = F`) ค่าของ `C2` และ `C3` จะไม่มีความหมาย (`-`):
+     - ถ้า `C4 = T` (Prime) ได้ส่วนลดสมาชิก $\rightarrow$ ครอบคลุม 4 กฎย่อย เป็น **Rule 6**
+     - ถ้า `C4 = F` (Normal) ไม่ได้ส่วนลด $\rightarrow$ ครอบคลุม 4 กฎย่อย เป็น **Rule 7**
+   - **ผลรวมกฎย่อยที่ครอบคลุม:** $2 + 1 + 1 + 2 + 2 + 4 + 4 = 16 = 2^4$ กฎครบถ้วน (ตรงตามเฉลยของอาจารย์ใน **SRS Section 10.3**)
+   - **เหตุผลที่ไม่สามารถยุบ Rule 2 รวมกับ Rule 4 (และ Rule 3 รวมกับ Rule 5) ได้:** แม้ Action จะเหมือนกัน (`A2, A3` และ `A2, A4`) แต่เงื่อนไขที่ทำให้คูปองใช้ไม่ได้คือ `C2 = F` **หรือ** `C3 = F` ซึ่งตารางตัดสินใจแบบ Limited-Entry หนึ่งคอลัมน์แสดงได้เฉพาะเงื่อนไขที่เชื่อมด้วย `AND` เท่านั้น จึงไม่สามารถยุบเป็นคอลัมน์เดียวกันได้โดยไม่ทับซ้อนกับเงื่อนไข `T, T, T`
 3. **ขั้นที่ 3 (เลือกค่าตัวเลขทดสอบด้วย BVA รอบจุดขอบ `minSpend = 1000`):**
    - เลือก `subtotal = 1000` (On-point: ถึงเกณฑ์ขั้นต่ำพอดี) สำหรับ Rule 1
    - เลือก `subtotal = 999` (Off-point: ขาดอีก 1 บาทจะถึงเกณฑ์) สำหรับ Rule 2 และ Rule 3
    - เลือก `subtotal = 1999` (เห็นผลปัดเศษ `floor(1999 * 5 / 100) = 99`) สำหรับ Rule 4–7
 
-| Rule | C1 (มีคูปอง) | C2 (เปิดใช้) | C3 ($\ge$ minSpend) | C4 (Prime) | Action |
-| --- | --- | --- | --- | --- | --- |
-| 1 | T | T | T | - | A1 |
-| 2 | T | T | F | T | A2, A3 |
-| 3 | T | T | F | F | A2, A4 |
-| 4 | T | F | - | T | A2, A3 |
-| 5 | T | F | - | F | A2, A4 |
-| 6 | F | - | - | T | A3 |
-| 7 | F | - | - | F | A4 |
+| Rule | C1 (มีคูปอง) | C2 (เปิดใช้) | C3 ($\ge$ minSpend) | C4 (Prime) | Action | จำนวนกฎย่อยที่ครอบคลุม |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | T | T | T | - | A1 | 2 |
+| 2 | T | T | F | T | A2, A3 | 1 |
+| 3 | T | T | F | F | A2, A4 | 1 |
+| 4 | T | F | - | T | A2, A3 | 2 |
+| 5 | T | F | - | F | A2, A4 | 2 |
+| 6 | F | - | - | T | A3 | 4 |
+| 7 | F | - | - | F | A4 | 4 |
 
 | Rule | subtotal | memberTier | coupon | Expected |
 | --- | --- | --- | --- | --- |
@@ -128,6 +137,7 @@ flowchart TD
 | ID | Endpoint | เงื่อนไข | Precondition | Test data | Expected |
 | --- | --- | --- | --- | --- | --- |
 | OP1-A1 | POST /auth/login | Rule 1 (T, T): login สำเร็จด้วยบัญชีที่ถูกต้อง (FR-0.1.1) | มีบัญชี seed `cus_normal` ในระบบ | body: `{"username":"cus_normal","password":"<SEED_PASSWORD_CUSTOMER_NORMAL>"}` | 200 + `data.accessToken` เป็น string, `data.user.username = "cus_normal"`, `data.user.role = "customer"` |
+| OP1-A2 | POST /auth/login | Rule 1 (T, T): login สำเร็จด้วยบัญชี Admin ได้บทบาทตรงตามบัญชี (FR-0.1.1) | มีบัญชี seed `admin01` ในระบบ | body: `{"username":"admin01","password":"<SEED_PASSWORD_ADMIN>"}` | 200 + `data.accessToken` เป็น string, `data.user.username = "admin01"`, `data.user.role = "admin"` |
 | OP1-B1 | POST /auth/login | Rule 2 (T, F): username มีอยู่จริงแต่ password ผิด (FR-0.1.2) | มีบัญชี seed `cus_normal` ในระบบ | body: `{"username":"cus_normal","password":"wrong_password_999"}` | 401 + `error.code = "AUTH_INVALID_CREDENTIALS"` |
 | OP1-B2 | POST /auth/login | Rule 3 (F, -): username ไม่มีในระบบ ไม่ว่า password จะเป็นอะไร (FR-0.1.2) | ไม่มีบัญชี `ghost_user_999` ในระบบ | body: `{"username":"ghost_user_999","password":"<SEED_PASSWORD_CUSTOMER_NORMAL>"}` | 401 + `error.code = "AUTH_INVALID_CREDENTIALS"` |
 
@@ -138,6 +148,8 @@ flowchart TD
 ### 2.1 ดูจาก FR ไหน / Function อะไร / AC ไหน
 - **Operation & Endpoint:** `OP-12 continueShopping()` $\rightarrow$ `POST /cart/continue` (ฟังก์ชัน `continueShopping` ใน `backend/src/modules/cart/repositories/cart-repository.ts`)
 - **FR ที่เกี่ยวข้อง:**
+    - **FR-0.2** ระบบต้องปฏิเสธ OP-2 ถึง OP-9 และ OP-12 ถึง OP-18 ที่ไม่ได้มาจากผู้ใช้ที่ login แล้ว ด้วย `AUTH_REQUIRED`
+    - **FR-0.3.1** ระบบต้องปฏิเสธ OP-3 ถึง OP-9 และ OP-12 ถึง OP-14 ที่เรียกโดยผู้ใช้ที่ไม่ใช่ Customer ด้วย `AUTH_FORBIDDEN`
     - **FR-6.4** เมื่อ Customer เรียก `continueShopping()` ขณะอยู่ stage `สำเร็จ` ระบบต้องเปลี่ยน Customer ไปสู่ stage `ตะกร้า`
     - **FR-8.4** ระบบต้องไม่ประมวลผล `continueShopping` ขณะ Customer อยู่ stage `ตะกร้า` หรือ `ชำระเงิน`
     - **FR-8.5.1** เมื่อระบบไม่ประมวลผล operation ตาม FR-8.1 ถึง FR-8.4 ระบบต้องปฏิเสธด้วย `OPERATION_NOT_ALLOWED`
@@ -172,6 +184,8 @@ stateDiagram-v2
 | OP12-A1 | POST /cart/continue | กลับสู่ตะกร้าหลังสั่งซื้อสำเร็จ (AC-18b, FR-6.4) | `cus_normal` เพิ่ม P1 × 1, กด checkout และ gateway เรียก `paySuccess` จนอยู่ stage `สำเร็จ` | header: token `cus_normal` | 200 + `data.stage = "cart"`, `data.lineCount = 0`, `data.couponCode = null` |
 | OP12-B1 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ตะกร้า` (FR-8.4, FR-8.5.1) | `cus_normal` อยู่ stage `ตะกร้า` (เริ่มต้น) | header: token `cus_normal` | 400 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `cart` |
 | OP12-B2 | POST /cart/continue | เรียก `continueShopping` ขณะอยู่ stage `ชำระเงิน` (FR-8.4, FR-8.5.1) | `cus_normal` เพิ่ม P1 × 1 แล้วกด checkout จนอยู่ stage `ชำระเงิน` | header: token `cus_normal` | 400 + `error.code = "OPERATION_NOT_ALLOWED"`, stage ยังเป็น `checkout` |
+| OP12-B3 | POST /cart/continue | เรียก `continueShopping` โดยไม่ได้ login (FR-0.2) | ไม่ได้ส่ง Authorization token | header: ไม่มี | 401 + `error.code = "AUTH_REQUIRED"` |
+| OP12-B4 | POST /cart/continue | Admin เรียก `continueShopping` ของ Customer (FR-0.3.1) | `admin01` login แล้ว | header: token `admin01` | 403 + `error.code = "AUTH_FORBIDDEN"` |
 
 ---
 
@@ -183,6 +197,7 @@ stateDiagram-v2
     - `OP-18 listCoupons()` $\rightarrow$ `GET /admin/coupons`
     - อยู่ในไฟล์ `backend/src/modules/admin/admin-routes.ts`
 - **FR ที่เกี่ยวข้อง:**
+    - **FR-0.2** ระบบต้องปฏิเสธ OP-2 ถึง OP-9 และ OP-12 ถึง OP-18 ที่ไม่ได้มาจากผู้ใช้ที่ login แล้ว ด้วย `AUTH_REQUIRED`
     - **FR-10.1.1** เมื่อ Admin เรียก `setCouponStatus(code, status)` ด้วย `code` ที่ไม่มีอยู่ ระบบต้องปฏิเสธด้วย `COUPON_NOT_FOUND`
     - **FR-10.1.2** เมื่อ Admin เรียก `setCouponStatus(code, status)` ด้วย `code` ที่มีอยู่ ระบบต้องเปลี่ยนสถานะของคูปองตามที่ระบุ
     - **FR-10.1.3** การเปลี่ยนสถานะคูปองต้องมีผลต่อการคำนวณ ณ `pressCheckout` ครั้งถัดไป (FR-4.2.1, FR-4.3.1)
@@ -210,7 +225,7 @@ stateDiagram-v2
      - `C2 (Invalid)`: รหัสที่ไม่มีในระบบ (`NO_SUCH`) $\rightarrow$ คาดหวัง `COUPON_NOT_FOUND` (**FR-10.1.1**)
    - สถานะคูปอง (`status`):
      - `S1 (Valid)`: อยู่ในรายการ (`'active'`, `'inactive'`)
-     - `S2 (Invalid)`: ไม่อยู่ในรายการ (`'disabled'`) $\rightarrow$ คาดหวัง `VALIDATION_ERROR`
+     - `S2 (Invalid)`: ไม่อยู่ในรายการ (`'disabled'`) $\rightarrow$ (**SOI-02**: SRS Section 5 ไม่ได้ระบุรหัสข้อผิดพลาดของ status ผิด enum ใน FR-10.1 จึงกำหนดใน API Contract เป็น `VALIDATION_ERROR` ตามกติกา Section 9)
 2. **ขั้นที่ 2 (ตรวจสอบ Observability & Cross-Actor Impact):**
    - เมื่อเปลี่ยนสถานะด้วย `OP17-A1` (**AC-19a**) แล้ว ต้องเรียก `OP18-A1` (`GET /admin/coupons` ตาม **AC-19b**) เพื่อยืนยันว่าข้อมูลที่อ่านกลับมาจากระบบเปลี่ยนจริง
    - ทดสอบผลกระทบต่อลูกค้า 2 จังหวะ คือ ปิดคูปองก่อนลูกค้ากด checkout (`OP17-A2` / **AC-7**) และปิดคูปองหลังลูกค้า checkout สร้างออเดอร์ไปแล้ว (`OP17-A3` / **FR-10.1.4**)
@@ -219,66 +234,107 @@ stateDiagram-v2
 | --- | --- | --- | --- | --- | --- |
 | OP17-A1 | POST /admin/coupons/SAVE10/status | Admin ปิดใช้คูปอง SAVE10 (AC-19a, FR-10.1.2) | `admin01` login แล้ว และ `SAVE10` มีสถานะ `active` | header: token `admin01`; body: `{"status":"inactive"}` | 200 + `data.coupons` แสดง `SAVE10` มี `status = "inactive"` |
 | OP18-A1 | GET /admin/coupons | Admin ดูรายการคูปองทั้งหมดหลังปิดใช้ (AC-19b, FR-10.2) | ทำ OP17-A1 แล้ว (`SAVE10` มีสถานะ `inactive`) | header: token `admin01` | 200 + `data.coupons` มี `{ code: "SAVE10", percent: 10, minSpend: 1000, status: "inactive" }` |
+| OP17-A4 | POST /admin/coupons/SAVE10/status | Admin เปิดใช้คูปอง SAVE10 กลับมาเป็น active (FR-10.1.2) | `admin01` ตั้ง `SAVE10` เป็น `inactive` แล้ว | header: token `admin01`; body: `{"status":"active"}` | 200 + `data.coupons` แสดง `SAVE10` มี `status = "active"` |
 | OP17-A2 | POST /cart/checkout | Admin ปิดใช้คูปองหลังลูกค้าผูกไว้ → ถอดคูปองตอน checkout (AC-7, FR-10.1.3) | `cus_normal` มี P2 × 1 (1,200 บาท) ผูก `SAVE10` แล้ว `admin01` ตั้ง `SAVE10` เป็น `inactive` | header: token `cus_normal`; body: `{"zone":"inCity","speed":"standard"}` | 201 + `messages` มี `code = "COUPON_NOT_APPLICABLE"`, `order.discount = 0`, `order.shippingFee = 30`, `order.netTotal = 1230` |
 | OP17-A3 | GET /orders/{orderId} | การปิดคูปองไม่มีผลกับออเดอร์ที่สร้างไปแล้ว (FR-10.1.4) | `cus_normal` มี P2 × 1 + `SAVE10` กด checkout ได้ออเดอร์ X (ส่วนลด 120) แล้ว `admin01` ปิดใช้ `SAVE10` | header: token `cus_normal`; path: `orderId` X | 200 + `data.discount = 120`, `data.netTotal = 1110`, `data.couponCode = "SAVE10"` (ไม่เปลี่ยน) |
 | OP17-B1 | POST /admin/coupons/NO_SUCH/status | เปลี่ยนสถานะคูปองที่ไม่มีในระบบ (FR-10.1.1) | `admin01` login แล้ว | header: token `admin01`; body: `{"status":"inactive"}` | 404 + `error.code = "COUPON_NOT_FOUND"` |
-| OP17-B2 | POST /admin/coupons/SAVE10/status | ส่งค่า status ที่ไม่อยู่ใน enum (VALIDATION_ERROR) | `admin01` login แล้ว | header: token `admin01`; body: `{"status":"disabled"}` | 400 + `error.code = "VALIDATION_ERROR"` |
+| OP17-B2 | POST /admin/coupons/SAVE10/status | `[SOI-02 / Contract]` ส่งค่า status ที่ไม่อยู่ใน enum | `admin01` login แล้ว | header: token `admin01`; body: `{"status":"disabled"}` | 400 + `error.code = "VALIDATION_ERROR"` |
 | OP17-B3 | POST /admin/coupons/SAVE10/status | Customer เรียกตั้งสถานะคูปองของ Admin (FR-0.3.2) | `cus_normal` login แล้ว | header: token `cus_normal`; body: `{"status":"inactive"}` | 403 + `error.code = "AUTH_FORBIDDEN"`, สถานะ `SAVE10` ยังเป็น `active` |
+| OP18-B1 | GET /admin/coupons | Customer เรียกดูรายการคูปองของ Admin (FR-0.3.2) | `cus_normal` login แล้ว | header: token `cus_normal` | 403 + `error.code = "AUTH_FORBIDDEN"` |
+| OP17-B4 | POST /admin/coupons/SAVE10/status | เรียกตั้งสถานะคูปองโดยไม่ได้ login (FR-0.2) | ไม่ได้ส่ง Authorization token | header: ไม่มี; body: `{"status":"inactive"}` | 401 + `error.code = "AUTH_REQUIRED"` |
+| OP18-B2 | GET /admin/coupons | เรียกดูรายการคูปองโดยไม่ได้ login (FR-0.2) | ไม่ได้ส่ง Authorization token | header: ไม่มี | 401 + `error.code = "AUTH_REQUIRED"` |
 
 ---
 
 # E2E
 
 ## วิธีคิดและการออกแบบ E2E Test (Playwright)
-- **ดูจากข้อกำหนดไหน:** อ้างอิง **Section 6.2 (DC-2.1 ถึง DC-2.13)** ซึ่งกำหนด `data-testid`, `data-value`, `data-status`, `data-kind`, `data-code` และกฎการเปลี่ยนหน้าตาม `stage` ของผู้ใช้
-- **ใช้เทคนิคอะไร และทำไม:** ใช้ **User Journey & Scenario-Based Testing** ร่วมกับ **FSM Stage Guard Verification** เพื่อจำลองพฤติกรรมผู้ใช้จริงบนเบราว์เซอร์ ตั้งแต่การกรอกฟอร์ม การอ่านข้อความแจ้งเตือน (`app-message`) การตรวจสอบค่าตัวเลขบนหน้าจอ ไปจนถึงการทำงานข้ามบทบาทระหว่าง `Customer` และ `Admin`
+- **ดูจากข้อกำหนดไหน:** อ้างอิง **Section 8 (Acceptance Criteria)** ร่วมกับ **Section 6.2 (DC-2.1 ถึง DC-2.13)** ซึ่งกำหนด `data-testid`, `data-value`, `data-status`, `data-kind`, `data-code` และกฎการเปลี่ยนหน้าตาม `stage` ของผู้ใช้
+- **ใช้เทคนิคอะไร และทำไม:** ใช้ **User Journey & Scenario-Based Testing** ร่วมกับ **FSM Stage Guard Verification** โดยไม่ได้เทสแยกเป็นปุ่มเดี่ยวๆ แต่ร้อยเรียง **Acceptance Criteria (AC)** ที่เกี่ยวข้องกันให้เป็นลำดับเหตุการณ์ของผู้ใช้จริงบนเบราว์เซอร์ ตั้งแต่การกรอกฟอร์ม การอ่านแบนเนอร์แจ้งเตือน (`app-message`) การตรวจตัวเลขบนหน้าจอ ไปจนถึงผลกระทบข้ามบทบาทระหว่าง `Customer` และ `Admin`
 
 ```mermaid
 flowchart LR
-    E1["1. E2E-LOGIN-1<br>ทดสอบ Login ผิด/ถูก & แยกหน้าตาม Role"] --> E2["2. E2E-SUCCESS-1 & 2<br>ตรวจยอดหน้า Success, กดช้อปต่อ (AC-18b) & Stage Guard (DC-2.13)"]
-    E2 --> E3["3. E2E-ADMIN-COUPONS-1<br>Admin ปิดคูปอง (AC-19a/b) -> ลูกค้ากด Checkout ถูกถอดคูปอง (AC-7)"]
+    E1["1. E2E-LOGIN-1<br>Precondition ทุก AC (FR-0.1.1/0.1.2)<br>Login ผิด/ถูก & แยกหน้าตาม Role"] --> E2["2. E2E-SUCCESS-1 & 2<br>AC-18a, AC-18b & DC-2.13<br>ตรวจยอดหน้า Success, กดช้อปต่อ & Stage Guard"]
+    E2 --> E3["3. E2E-ADMIN-COUPONS-1<br>AC-19a, AC-19b + AC-7<br>Admin ปิดคูปอง -> ลูกค้ากด Checkout ถูกถอดคูปอง"]
 ```
 
 ## **E2E-LOGIN-1: login ไม่สำเร็จแสดง error และ login สำเร็จพาไปหน้าที่ตรงตามบทบาท (FR-0.1.1, FR-0.1.2)**
 
-`e2e/login.spec.ts`
-
-- เปิด `/login` แล้วกรอก `login-username` = `cus_normal` และ `login-password` = `wrong_password` จากนั้นกด `login-submit`
-    - เช็คว่ายังอยู่ที่ `page-login`
-    - เช็คว่า `app-message` มี `data-kind` = `error` และ `data-code` = `AUTH_INVALID_CREDENTIALS` (FR-0.1.2)
-- กรอก `login-username` = `cus_normal` และรหัสผ่านที่ถูกต้อง แล้วกด `login-submit`
-    - เช็คว่าระบบพาไปที่ `page-products` (FR-0.1.1 บทบาท Customer)
-- เปิด `/login` ใหม่แล้ว login ด้วย `admin01`
-    - เช็คว่าระบบพาไปที่ `page-admin-products` (FR-0.1.1 บทบาท Admin)
+- **ไฟล์ทดสอบ:** `e2e/login.spec.ts`
+- **ตรงกับ AC / ข้อกำหนดไหน:**
+    - **AC ที่เกี่ยวข้อง:** เป็น **Precondition พื้นฐานของทุก AC (AC-1 ถึง AC-19b)** เพราะทุกการทดสอบต้องเริ่มจากการเข้าสู่ระบบด้วยบัญชี `cus_normal`, `cus_prime` หรือ `admin01`
+    - **FR & DC ที่เกี่ยวข้อง:** **FR-0.1.1** (เข้าสู่ระบบตามบทบาทของบัญชี), **FR-0.1.2** (รหัสผิดปฏิเสธด้วย `AUTH_INVALID_CREDENTIALS`), **DC-2.2** (`app-message`), และ **DC-2.4** (ฟอร์มหน้า `/login`)
+- **คิด E2E นี้ได้จากอะไร (วิธีคิดสั้นๆ):**
+    - คิดจากการนำ **Decision Table ของการ Login** มารวมกับ **Role-Based Redirect บนหน้าเว็บ** ในฟลว์เดียว คือเริ่มจากลอง **กรอกรหัสผิดก่อน** เพื่อดูว่าหน้าเว็บไม่หลุดไปหน้าอื่นและขึ้นแบนเนอร์ `AUTH_INVALID_CREDENTIALS` จากนั้น **กรอกรหัส `cus_normal` ที่ถูก** เพื่อดูว่าระบบพา Customer ไปหน้า `/products` แล้ว **กด Logout มาเข้าด้วย `admin01`** เพื่อดูว่าระบบพา Admin ไปหน้า `/admin/products` ครบทั้งเคสผ่านและไม่ผ่านของทั้ง 2 บทบาทในการรันครั้งเดียว
+- **ขั้นตอนการทดสอบ (Steps):**
+    - เปิด `/login` แล้วกรอก `login-username` = `cus_normal` และ `login-password` = `wrong_password_999` จากนั้นกด `login-submit`
+        - เช็คว่ายังอยู่ที่ `page-login`
+        - เช็คว่า `app-message` มี `data-kind` = `error` และ `data-code` = `AUTH_INVALID_CREDENTIALS` (FR-0.1.2)
+    - กรอก `login-username` = `cus_normal` และรหัสผ่านที่ถูกต้อง แล้วกด `login-submit`
+        - เช็คว่าระบบพาไปที่ `page-products` (FR-0.1.1 บทบาท Customer)
+    - กด `logout-button` แล้ว login ด้วย `admin01`
+        - เช็คว่าระบบพาไปที่ `page-admin-products` (FR-0.1.1 บทบาท Admin)
 
 ## **E2E-SUCCESS-1: จ่ายเงินสำเร็จแสดงข้อมูลออเดอร์ครบถ้วน → กดช้อปปิ้งต่อกลับสู่หน้าตะกร้าว่าง (AC-18a, AC-18b, FR-6.1.4)**
 
-`e2e/success.spec.ts`
-
-- login `cus_normal` เพิ่ม P2 × 1 (1,200 บาท) ผูกคูปอง `SAVE10` กดชำระเงิน (`inCity`, `standard`) แล้วกด `gateway-pay-success`
-    - เช็คว่าเห็น `page-success` และ `success-order-id` (AC-18a)
-    - เช็คว่าเห็น `success-line-P2`, `success-subtotal` (`data-value` = `1200`), `success-discount` (`data-value` = `120`), `success-shipping` (`data-value` = `30`), `success-total` (`data-value` = `1110`) (FR-6.1.4)
-- กดปุ่มช้อปปิ้งต่อ (`continue-shopping-button`)
-    - เช็คว่าระบบพาไปที่ `page-cart` และไม่มีรายการสินค้าในตะกร้า (`cart-subtotal` มี `data-value` = `0`, ปุ่ม `checkout-button` มีสถานะ `disabled`) (AC-18b, FR-6.4)
+- **ไฟล์ทดสอบ:** `e2e/success.spec.ts`
+- **ตรงกับ AC / ข้อกำหนดไหน:**
+    - **AC ที่เกี่ยวข้อง:**
+        - **AC-18a (FR-6.1.2, FR-6.1.3):** เมื่อ `paySuccess` สำเร็จ ออเดอร์เปลี่ยนเป็น `ชำระแล้ว`, ตะกร้าและคูปองถูกล้าง, และลูกค้าเข้าสู่ stage `สำเร็จ`
+        - **AC-18b (FR-6.4):** เมื่อลูกค้าอยู่ stage `สำเร็จ` แล้วเรียก `continueShopping()` ลูกค้าต้องกลับสู่ stage `ตะกร้า` ที่มีจำนวนรายการเป็นศูนย์
+    - **FR & DC ที่เกี่ยวข้อง:** **FR-6.1.4** (หน้าสำเร็จต้องแสดง `orderId`, รายการสินค้า และยอดเงินทุกส่วน), **FR-6.4**, และ **DC-2.9** (test IDs ของหน้า `/success`)
+- **คิด E2E นี้ได้จากอะไร (วิธีคิดสั้นๆ):**
+    - คิดจาก **State Transition ช่วงจบการขาย (`ชำระเงิน` $\rightarrow$ `สำเร็จ` $\rightarrow$ `ตะกร้า`)** โดยจำลองให้ลูกค้าซื้อ `P2 × 1` (1,200 บาท) และผูกคูปอง `SAVE10` (ลด 120 บาท) เพื่อให้ตอนกดชำระเงินสำเร็จ (`gateway-pay-success` ตาม **AC-18a**) เราได้ตรวจพร้อมกันเลยว่าหน้า `page-success` แสดงข้อมูล **Order Snapshot** ครบทุกช่อง (`1200 - 120 + 30 = 1110` ตาม **FR-6.1.4**) จากนั้นกดปุ่ม `continue-shopping-button` ต่อทันทีเพื่อเช็ค **AC-18b** ว่ากลับมาหน้า `page-cart` ที่ตะกร้าว่างเปล่า (`cart-subtotal = 0`) และปุ่ม `checkout-button` ถูกล็อก (`disabled`)
+- **ขั้นตอนการทดสอบ (Steps):**
+    - login `cus_normal` เพิ่ม P2 × 1 (1,200 บาท) ผูกคูปอง `SAVE10` กดชำระเงิน (`inCity`, `standard`) แล้วกด `gateway-pay-success`
+        - เช็คว่าเห็น `page-success` และ `success-order-id` (AC-18a)
+        - เช็คว่าเห็น `success-line-P2`, `success-subtotal` (`data-value` = `1200`), `success-discount` (`data-value` = `120`), `success-shipping` (`data-value` = `30`), `success-total` (`data-value` = `1110`) (FR-6.1.4)
+    - กดปุ่มช้อปปิ้งต่อ (`continue-shopping-button`)
+        - เช็คว่าระบบพาไปที่ `page-cart` และไม่มีรายการสินค้าในตะกร้า (`cart-subtotal` มี `data-value` = `0`, ปุ่ม `checkout-button` มีสถานะ `disabled`) (AC-18b, FR-6.4)
 
 ## **E2E-SUCCESS-2: เปิด /cart ตอนอยู่ stage สำเร็จ ระบบบังคับแสดงหน้า page-success (DC-2.13)**
 
-`e2e/success.spec.ts`
-
-- login `cus_normal` เพิ่ม P1 × 1 กดชำระเงิน แล้วกด `gateway-pay-success` จนอยู่ที่ `page-success` (stage `สำเร็จ`)
-- พิมพ์ URL `/cart` เอง
-    - เช็คว่าระบบพาไปที่ `page-success` แทน (DC-2.13)
+- **ไฟล์ทดสอบ:** `e2e/success.spec.ts`
+- **ตรงกับ AC / ข้อกำหนดไหน:**
+    - **AC ที่เกี่ยวข้อง:** ต่อยอดจากสถานะใน **AC-18a** (เมื่อลูกค้าอยู่ stage `สำเร็จ` หลังชำระเงินเสร็จ แต่ยังไม่ได้กดช้อปปิ้งต่อตาม AC-18b)
+    - **FR & DC ที่เกี่ยวข้อง:** **DC-2.13** (เมื่อผู้ใช้เปิด URL ที่ไม่ตรงกับ `stage` ปัจจุบัน ระบบต้องแสดงหน้าที่ตรงกับ `stage` ปัจจุบัน), **FR-8.2**, และ **FR-8.3**
+- **คิด E2E นี้ได้จากอะไร (วิธีคิดสั้นๆ):**
+    - คิดจาก **FSM Sneak Path / การป้องกันการกระโดดข้าม Stage ด้วย URL**: บน API มีการบล็อกไม่ให้แก้ตะกร้าตอนอยู่ stage `สำเร็จ` แล้ว แต่บนเบราว์เซอร์ผู้ใช้สามารถพิมพ์ `/cart` บนแถบ URL เพื่อแอบหนีออกจากหน้า `/success` โดยไม่ยอมกดปุ่ม `continue-shopping-button` ได้ จึงต้องมีเคสนี้เพื่อพิสูจน์ว่า `StageGuard` บน Frontend บังคับดึงผู้ใช้กลับมาที่หน้า `page-success` เสมอตาม **DC-2.13**
+- **ขั้นตอนการทดสอบ (Steps):**
+    - login `cus_normal` เพิ่ม P1 × 1 กดชำระเงิน แล้วกด `gateway-pay-success` จนอยู่ที่ `page-success` (stage `สำเร็จ` ตาม AC-18a)
+    - พิมพ์ URL `/cart` เองบนเบราว์เซอร์
+        - เช็คว่าระบบบังคับแสดงหน้า `page-success` แทน (DC-2.13)
 
 ## **E2E-ADMIN-COUPONS-1: admin ปิดใช้คูปอง SAVE10 → ลูกค้าที่ผูกคูปองไว้กด checkout ถูกถอดคูปองพร้อมแจ้ง notice (AC-19a, AC-19b, AC-7)**
 
-`e2e/admin-coupons.spec.ts`
+- **ไฟล์ทดสอบ:** `e2e/admin-coupons.spec.ts`
+- **ตรงกับ AC / ข้อกำหนดไหน:**
+    - **AC ที่เกี่ยวข้อง:**
+        - **AC-19a (FR-10.1.2):** `admin01` เรียก `setCouponStatus(SAVE10, ปิดใช้)` แล้วสถานะของ `SAVE10` เปลี่ยนเป็น `ปิดใช้` (`inactive`)
+        - **AC-19b (FR-10.2):** `admin01` ดูรายการคูปองหลังปิดใช้ เห็น `SAVE10` มี `percent = 10`, `minSpend = 1000`, และสถานะ `ปิดใช้` (`inactive`)
+        - **AC-7 (FR-4.3.1, FR-4.3.2, FR-4.4.2, FR-10.1.3):** `cus_normal` ผูก `SAVE10` ไว้ในตะกร้าที่มี P2 × 1 (1,200 บาท) แล้ว `admin01` ปิดใช้ `SAVE10` เมื่อ `cus_normal` กด Checkout ระบบต้องถอดคูปอง แจ้ง notice `COUPON_NOT_APPLICABLE` ให้ส่วนลด `0` ค่าส่ง `30` และยอดสุทธิ `1,230` บาท
+    - **FR & DC ที่เกี่ยวข้อง:** **FR-10.1.2**, **FR-10.1.3**, **FR-10.2**, **FR-4.3.1**, **FR-4.3.2**, และ **DC-2.12** (test IDs ของหน้า `/admin/coupons`)
+- **คิด E2E นี้ได้จากอะไร (วิธีคิดสั้นๆ):**
+    - คิดจาก **Cross-Actor Scenario (ผลกระทบข้ามบทบาทระหว่าง Admin และ Customer)**: ถ้าเทสแค่ว่า Admin กดปิดคูปองแล้วสถานะบนตารางเปลี่ยนเป็น `inactive` จะพิสูจน์ได้แค่ **AC-19a และ AC-19b** แต่ไม่เห็นว่ามีผลกับตะกร้าของลูกค้าจริงไหม จึงออกแบบให้ผูก **AC-19a + AC-19b + AC-7** เข้าเป็นเหตุการณ์เดียวกัน คือ **(1) ให้ลูกค้าผูกคูปอง `SAVE10` ทิ้งไว้ในตะกร้าก่อน** $\rightarrow$ **(2) สลับเป็น Admin เข้ามากดปิดคูปอง `SAVE10` บนหน้า `/admin/coupons` (`AC-19a, AC-19b`)** $\rightarrow$ **(3) สลับกลับมาเป็นลูกค้าแล้วกด Checkout (`AC-7`)** เพื่อพิสูจน์บนหน้าเว็บจริงว่าคูปองถูกถอดออก มีแบนเนอร์ `notice` (`COUPON_NOT_APPLICABLE`) แจ้งเตือน และยอดสุทธิถูกคำนวณใหม่แบบไม่มีส่วนลดคูปอง (`1,230` บาท)
+- **ขั้นตอนการทดสอบ (Steps):**
+    - login `cus_normal` เพิ่ม P2 × 1 (1,200 บาท) ไปหน้าตะกร้าแล้วผูกคูปอง `SAVE10` สำเร็จ (`cart-coupon-code` แสดง `SAVE10`)
+    - logout แล้ว login เป็น `admin01` ไปที่หน้า `/admin/coupons` (`nav-admin-coupons`)
+        - เช็คว่าเห็น `page-admin-coupons` และแถว `admin-coupon-row-SAVE10` มี `admin-coupon-percent` (`data-value` = `10`), `admin-coupon-min-spend` (`data-value` = `1000`), `admin-coupon-status` (`data-status` = `active`) (FR-10.2)
+    - กดปุ่ม `admin-coupon-toggle-status` ในแถว `admin-coupon-row-SAVE10`
+        - เช็คว่า `admin-coupon-status` เปลี่ยนเป็น `data-status` = `inactive` (AC-19a, AC-19b)
+    - logout แล้ว login กลับเป็น `cus_normal` ไปที่หน้าตะกร้า แล้วกด `checkout-button` (`inCity`, `standard`)
+        - เช็คว่าเห็น `page-checkout`
+        - เช็คว่า `app-message` มี `data-kind` = `notice` และ `data-code` = `COUPON_NOT_APPLICABLE`
+        - เช็คว่า `checkout-discount` มี `data-value` = `0`, `checkout-shipping` มี `data-value` = `30`, และ `checkout-total` มี `data-value` = `1230` (AC-7)
 
-- login `cus_normal` เพิ่ม P2 × 1 (1,200 บาท) ไปหน้าตะกร้าแล้วผูกคูปอง `SAVE10` สำเร็จ (`cart-coupon-code` แสดง `SAVE10`)
-- logout แล้ว login เป็น `admin01` ไปที่หน้า `/admin/coupons` (`nav-admin-coupons`)
-    - เช็คว่าเห็น `page-admin-coupons` และแถว `admin-coupon-row-SAVE10` มี `admin-coupon-percent` (`data-value` = `10`), `admin-coupon-min-spend` (`data-value` = `1000`), `admin-coupon-status` (`data-status` = `active`) (FR-10.2)
-- กดปุ่ม `admin-coupon-toggle-status` ในแถว `admin-coupon-row-SAVE10`
-    - เช็คว่า `admin-coupon-status` เปลี่ยนเป็น `data-status` = `inactive` (AC-19a, AC-19b)
-- logout แล้ว login กลับเป็น `cus_normal` ไปที่หน้าตะกร้า แล้วกด `checkout-button` (`inCity`, `standard`)
-    - เช็คว่าเห็น `page-checkout`
-    - เช็คว่า `app-message` มี `data-kind` = `notice` และ `data-code` = `COUPON_NOT_APPLICABLE`
-    - เช็คว่า `checkout-discount` มี `data-value` = `0`, `checkout-shipping` มี `data-value` = `30`, และ `checkout-total` มี `data-value` = `1230` (AC-7)
+---
+
+# Open Issue Log (ตามกติกา SRS Section 9)
+
+ตามข้อกำหนดใน **SRS-CART-002 v1.8 ส่วนที่ 9 (Open Issues / Specification Gaps)** จุดที่เอกสาร SRS ไม่ได้ระบุพฤติกรรมไว้โดยตรง จะถูกบันทึกเป็นรหัส `SOI-n` และแยกการตรวจสอบระดับ API Contract ออกจากค่าคาดหวังตาม SRS ดังนี้:
+
+| รหัส | ประเด็นที่ SRS ไม่ได้กำหนด (Specification Gap) | แนวทางจัดการและการออกแบบ (Disposition) | นโยบายการทดสอบ (Test Policy) |
+| --- | --- | --- | --- |
+| **SOI-01** | SRS ส่วนที่ 7 ระบุรายชื่อบัญชีผู้ใช้ตั้งต้น (`cus_normal`, `cus_prime`, `admin01`) แต่ไม่ได้ระบุรหัสผ่านของแต่ละบัญชี | กำหนดรหัสผ่านผ่านตัวแปรสภาพแวดล้อม (`SEED_PASSWORD_*`) สำหรับสภาพแวดล้อมทดสอบ | ทดสอบ `OP-1 login` โดยดึงรหัสผ่านที่ถูกต้องจาก Environment Variable โดยไม่อ้างอิงค่าคงที่ตายตัวว่าเป็นข้อกำหนดจาก SRS |
+| **SOI-02** | ใน `OP-17 setCouponStatus(code, status)` (**FR-10.1**) และตารางที่ 5 ไม่ได้ระบุรหัสข้อผิดพลาดและลำดับการตรวจเมื่อส่ง `status` ที่ไม่อยู่ใน enum (`เปิดใช้` / `ปิดใช้`) | ตรวจว่ามีรหัสคูปองอยู่ในระบบก่อน (`COUPON_NOT_FOUND` ตาม **FR-10.1.1**) หากมีคูปองแต่ `status` ไม่อยู่ใน `['active', 'inactive']` ให้คืน `400 VALIDATION_ERROR` พร้อม `details.fields = ['status']` | แยกเคส `OP17-B2` เป็นการทดสอบระดับ API Contract (`[SOI-02]`) โดยไม่นำไปปะปนเป็น SRS Expected Oracle |
+| **SOI-03** | **DC-2.13** ระบุว่าเมื่อ Customer เปิด URL ที่ไม่ตรงกับ `stage` ปัจจุบันต้องแสดงหน้าที่ตรงกับ `stage` แต่ **FR-8.5.2** กำหนดให้ `listProducts`, `listOrders`, `viewOrder` ทำงานได้ในทุก `stage` | บังคับใช้ `StageGuard` เฉพาะกลุ่มหน้า Workflow ที่ผูกกับ `stage` โดยตรง ได้แก่ `/cart`, `/checkout`, และ `/success` ส่วนหน้าอ่านข้อมูล (`/products`, `/orders`, `/orders/:orderId`) เปิดดูได้ทุก `stage` | ทดสอบ `E2E-SUCCESS-2` (เปิด `/cart` ขณะอยู่ stage `สำเร็จ` แล้วถูกบังคับไปหน้า `page-success`) ภายในขอบเขตหน้า Workflow ที่ชัดเจนตาม **DC-2.13** |
