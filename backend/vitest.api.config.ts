@@ -2,8 +2,13 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-const envFile = fileURLToPath(new URL('./.env.test', import.meta.url));
-if (existsSync(envFile)) process.loadEnvFile(envFile);
+const envTest = fileURLToPath(new URL('./.env.test', import.meta.url));
+const envDefault = fileURLToPath(new URL('./.env', import.meta.url));
+if (existsSync(envTest)) {
+  process.loadEnvFile(envTest);
+} else if (existsSync(envDefault)) {
+  process.loadEnvFile(envDefault);
+}
 
 export default defineConfig({
   test: {
