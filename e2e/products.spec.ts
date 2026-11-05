@@ -9,9 +9,15 @@ const PASSWORD = {
 
 test.beforeEach(async ({ request }) => {
   // only the APP_ENV=test API has /test/reset, so anything but 200 means it is not the local test stack: stop here
-  const reset = await request.post(`${API_URL}/test/reset`, {
+  let reset = await request.post(`${API_URL}/test/reset`, {
     headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
   });
+  if (reset.status() !== 200) {
+    await new Promise(r => setTimeout(r, 1000));
+    reset = await request.post(`${API_URL}/test/reset`, {
+      headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
+    });
+  }
   expect(reset.status()).toBe(200);
 });
 

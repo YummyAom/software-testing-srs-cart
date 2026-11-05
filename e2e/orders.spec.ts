@@ -9,9 +9,15 @@ const PASSWORD = {
 
 test.beforeEach(async ({ request }) => {
   // only the APP_ENV=test API has /test/reset, so anything but 200 means it is not the local test stack: stop here
-  const reset = await request.post(`${API_URL}/test/reset`, {
+  let reset = await request.post(`${API_URL}/test/reset`, {
     headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
   });
+  if (reset.status() !== 200) {
+    await new Promise(r => setTimeout(r, 1000));
+    reset = await request.post(`${API_URL}/test/reset`, {
+      headers: { 'x-test-reset-token': process.env.TEST_RESET_TOKEN ?? '' },
+    });
+  }
   expect(reset.status()).toBe(200);
 });
 
@@ -80,6 +86,7 @@ test.describe('page-orders', () => {
 
     // 2. คลิก continue-shopping-button กลับสู่ตะกร้า และสั่งซื้อ Order 2 (P2 x 1)
     await page.getByTestId('continue-shopping-button').click();
+    await expect(page.getByTestId('page-cart')).toBeVisible();
     await page.getByTestId('nav-products').click();
     await expect(page.getByTestId('page-products')).toBeVisible();
     await page.waitForLoadState('networkidle');
